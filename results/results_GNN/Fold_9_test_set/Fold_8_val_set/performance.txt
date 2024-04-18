@@ -1,0 +1,39 @@
+18-Apr-2024, 12:55:31
+---------------------------------------------------------
+GNN TRAINING AND PERFORMANCE
+Best epoch: 5
+Dataset Size = 103
+***************
+Training set
+Set size = 83
+R2 = -0.020
+MAE = 25.200
+RMSE = 31.957
+Mean Bias Error = 6.354
+Mean Absolute Percentage Error = 1.233
+Error Standard Deviation = 31.319
+***************
+Validation set
+Set size = 10
+R2 = -0.004
+MAE = 23.392
+RMSE = 27.022
+Mean Bias Error = 1.639
+Mean Absolute Percentage Error = 0.522
+Error Standard Deviation = 26.973
+***************
+Test set
+Set size = 10
+Accuracy = 0.700
+Precision = 0.700
+Recall = 1.000
+F1 = 0.824
+Test Set Total Correct Face of Addition Predictions = 9
+R2 = -0.013
+MAE = 18.226
+RMSE = 22.619
+Mean Bias Error = 2.768
+Mean Absolute Percentage Error = 0.333
+Error Standard Deviation = 22.449
+---------------------------------------------------------
+OUTLIERS (TEST SET)

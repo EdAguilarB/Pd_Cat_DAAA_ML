@@ -27,7 +27,7 @@ class daaa_reaction(reaction_graph):
                 pd.read_csv(os.path.join(root, 'raw', f'{file_folds}'))
                 filename = filename[:-4] + '_folds' + filename[-4:]
             except:
-                self.split_data(root, filename, opt.folds)
+                self.split_data(root, filename, opt.folds, opt.global_seed)
                 filename = filename[:-4] + '_folds' + filename[-4:]
 
         super().__init__(opt = opt, filename = filename, mol_cols = molcols, root=root)
@@ -102,13 +102,13 @@ class daaa_reaction(reaction_graph):
             # Feature 1: Atomic number        
             node_feats += self._one_h_e(atom.GetSymbol(), self._elem_list)
             # Feature 2: Atom degree
-            node_feats += self._one_h_e(atom.GetDegree(), [1, 2, 3, 4])
+            #node_feats += self._one_h_e(atom.GetDegree(), [1, 2, 3, 4])
             # Feature 3: Hybridization
-            node_feats += self._one_h_e(atom.GetHybridization(), [0,2,3,4])
+            #node_feats += self._one_h_e(atom.GetHybridization(), [0,2,3,4])
             # Feature 4: Aromaticity
-            node_feats += [atom.GetIsAromatic()]
+            #node_feats += [atom.GetIsAromatic()]
             # Feature 5: In Ring
-            node_feats += [atom.IsInRing()]
+            #node_feats += [atom.IsInRing()]
             # Feature 6: Chirality
             node_feats += self._one_h_e(atom.GetChiralTag(),[0,1,2])
 
@@ -198,12 +198,12 @@ class daaa_reaction(reaction_graph):
         return df
     
 
-    def split_data(self, root, filename, n_folds):
+    def split_data(self, root, filename, n_folds, seed = 42):
 
         dataset = pd.read_csv(os.path.join(root, 'raw', f'{filename}'))
         dataset['category'] = dataset['%topA'].apply(lambda m: 0 if m < 50 else 1)
 
-        folds = StratifiedKFold(n_splits = n_folds, shuffle = True, random_state=23)
+        folds = StratifiedKFold(n_splits = n_folds, shuffle = True, random_state=seed)
 
         test_idx = []
 
