@@ -154,6 +154,21 @@ class BaseOptions:
             default=250,
             help='Number of epochs',
             )  
+        
+        self.parser.add_argument(
+            '--explain_model',
+            type=tuple,
+            default=(9,5),
+            help='Model to explain',
+            )
+        
+        self.parser.add_argument(
+            '--explain_reactions',
+            type=tuple,
+            default=(22,23,24),
+            help='Model to explain',
+            )
+    
 
         self.parser.add_argument(
             '--global_seed',
@@ -161,6 +176,8 @@ class BaseOptions:
             default=2023,
             help='Global random seed for reproducibility',
             )
+        
+
 
         self.initialized = True
     
