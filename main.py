@@ -8,7 +8,7 @@ from call_methods import make_network, create_loaders
 from utils.utils_model import train_network, eval_network, network_report, network_outer_report
 from torch_geometric import seed_everything
 from icecream import ic
-from utils.experiments import train_tml_model_nested_cv, compare_results, explain_model
+from utils.experiments import train_tml_model_nested_cv, compare_results, explain_tml_model, explain_GNN_model
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -167,6 +167,31 @@ def run_experiment() -> None:
     compare_results(opt=opt, exp_dir=os.getcwd()+'/results/novel_vs_gnn',
                     path1='results/novel_feat/results_lr', path2='results/results_GNN', 
                     method1='novel_lr', method2='HCat-GNet')
+    
+    novel_desc = ['A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 
+                       'D(Hammett)', 'UL(volume)', 'LL(volume)', 'UR(volume)', 'LR(volume)', 'dielectric constant']
+    explain_tml_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'novel_feat', 'results_rf'), \
+                      opt=opt, feat_names=novel_desc)
+
+    explain_tml_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'novel_feat', 'results_gb'), \
+                      opt=opt, feat_names=novel_desc)
+    
+    rdkit_desc = ['fr_ether_substrate','fr_methoxy_substrate','BalabanJ_ligand','BertzCT_ligand','Chi0_ligand',\
+                  'Chi0n_ligand','Chi0v_ligand','Chi1_ligand','Chi1n_ligand','Chi1v_ligand','HallKierAlpha_ligand',\
+                    'MaxAbsEStateIndex_ligand','MaxAbsPartialCharge_ligand','MaxEStateIndex_ligand','MinAbsEStateIndex_ligand',\
+                        'MinEStateIndex_ligand','MinPartialCharge_ligand','MolMR_ligand']
+
+    explain_tml_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'rdkit', 'results_rf'), \
+                      opt=opt, feat_names=rdkit_desc)
+    
+    rdkit_desc = ['fr_allylic_oxid_substrate','fr_methoxy_substrate','BalabanJ_ligand','MaxAbsPartialCharge_ligand']
+
+    explain_tml_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'rdkit', 'results_gb'), \
+                      opt=opt, feat_names=rdkit_desc)
+    
+
+                        
+
 
 
 opt = BaseOptions().parse()
@@ -174,7 +199,9 @@ opt = BaseOptions().parse()
 if __name__ == "__main__": 
     #run_experiment() 
 
-    explain_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'results_GNN'), opt=opt)
+    explain_GNN_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'results_GNN'), opt=opt)
+
+
 
 
 
