@@ -141,3 +141,5 @@ opt = BaseOptions().parse()
 if __name__ == "__main__": 
     #run_experiment() 
     train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd())
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb')
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='lr')

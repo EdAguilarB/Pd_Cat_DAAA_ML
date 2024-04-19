@@ -16,7 +16,6 @@ from utils.plot_utils import create_bar_plot, create_violin_plot, create_strip_p
     create_parity_plot, plot_importances
 from model.gcn import GCN_explain
 from math import sqrt
-from data.rhcaa import rhcaa_diene
 import argparse
 import random
 from utils.other_utils import explain_dataset, visualize_score_features, \
@@ -27,7 +26,7 @@ from icecream import ic
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str) -> None:
+def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str, representation = 'novel_feat', ml_algorithm = 'rf') -> None:
 
     print('Initialising chiral ligands selectivity prediction using a traditional ML approach.')
     
@@ -37,10 +36,13 @@ def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str) -> None:
     # Load the data
     filename = opt.filename[:-4] + '_folds' + opt.filename[-4:]
     data = pd.read_csv(f'{opt.root}/raw/{filename}')
-    data = data[['LVR1', 'LVR2', 'LVR3', 'LVR4', 'LVR5', 'LVR6', 'LVR7', 'VB', 'ER1', 'ER2', 'ER3', 'ER4', 'ER5', 'ER6',
-               'ER7', 'SStoutR1', 'SStoutR2', 'SStoutR3', 'SStoutR4', '%top', 'fold', 'index']]
-    descriptors = ['LVR1', 'LVR2', 'LVR3', 'LVR4', 'LVR5', 'LVR6', 'LVR7', 'VB', 'ER1', 'ER2', 'ER3', 'ER4', 'ER5', 'ER6',
-               'ER7', 'SStoutR1', 'SStoutR2', 'SStoutR3', 'SStoutR4']
+
+    # Select the descriptors
+    if representation == 'novel_feat':
+        data = data[['A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 'D(Hammett)', 
+                     'UL(volume)', 'LL(volume)', 'UR(volume)', 'LR(volume)', 'dielectric constant', '%topA', 'fold', 'index']]
+        descriptors = ['A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 
+                       'D(Hammett)', 'UL(volume)', 'LL(volume)', 'UR(volume)', 'LR(volume)', 'dielectric constant']
     
     # Nested cross validation
     ncv_iterator = split_data(data)
@@ -53,8 +55,8 @@ def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str) -> None:
 
     # Hyperparameter optimisation
     print("Hyperparameter optimisation starting...")
-    X, y, _ = load_variables(f'{opt.root}/raw/learning_folds.csv')
-    best_params = hyperparam_tune(X, y, choose_model(best_params=None, algorithm = opt.tml_algorithm), 123456789)
+    X, y = load_variables(data)
+    best_params = hyperparam_tune(X, y, choose_model(best_params=None, algorithm = ml_algorithm), opt.global_seed)
     print('Hyperparameter optimisation has finalised')
     print("Training starting...")
     print("********************************")
@@ -73,24 +75,24 @@ def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str) -> None:
             # Get the train, validation and test sets
             train_set, val_set, test_set = next(ncv_iterator)
             # Choose the model
-            model = choose_model(best_params, opt.tml_algorithm)
+            model = choose_model(best_params, ml_algorithm)
             # Fit the model
-            model.fit(train_set[descriptors], train_set['%top'])
+            model.fit(train_set[descriptors], train_set['%topA'])
             # Predict the train set
             preds = model.predict(train_set[descriptors])
-            train_rmse = sqrt(mean_squared_error(train_set['%top'], preds))
+            train_rmse = sqrt(mean_squared_error(train_set['%topA'], preds))
             # Predict the validation set
             preds = model.predict(val_set[descriptors])
-            val_rmse = sqrt(mean_squared_error(val_set['%top'], preds))
+            val_rmse = sqrt(mean_squared_error(val_set['%topA'], preds))
             # Predict the test set
             preds = model.predict(test_set[descriptors])
-            test_rmse = sqrt(mean_squared_error(test_set['%top'], preds))
+            test_rmse = sqrt(mean_squared_error(test_set['%topA'], preds))
 
             print('Outer: {} | Inner: {} | Run {}/{} | Train RMSE {:.3f} % | Val RMSE {:.3f} % | Test RMSE {:.3f} %'.\
                   format(outer, real_inner, counter, TOT_RUNS, train_rmse, val_rmse, test_rmse) )
             
             # Generate a report of the model performance
-            tml_report(log_dir=f"{current_dir}/{opt.log_dir_results}/learning_set/results_{opt.tml_algorithm}/",
+            tml_report(log_dir=f"{current_dir}/{opt.log_dir_results}/{representation}/results_{ml_algorithm}/",
                        data = (train_set, val_set, test_set),
                        outer = outer,
                        inner = real_inner,
@@ -105,7 +107,7 @@ def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str) -> None:
 
         # Generate a report of the model performance for the outer/test fold
         network_outer_report(
-            log_dir=f"{current_dir}/{opt.log_dir_results}/learning_set/results_{opt.tml_algorithm}/Fold_{outer}_test_set/",
+            log_dir=f"{current_dir}/{opt.log_dir_results}/{representation}/results_{ml_algorithm}/Fold_{outer}_test_set/",
             outer=outer,
         )
 
@@ -115,66 +117,7 @@ def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str) -> None:
 
 
 
-def predict_final_test_network(parent_dir:str, opt: argparse.Namespace) -> None:
 
-    opt = BaseOptions().parse()
-
-    current_dir = parent_dir
-    
-    # Load the final test set
-    final_test =rhcaa_diene(opt, opt.filename_final_test, opt.mol_cols, opt.root_final_test, include_fold=False)
-    test_loader = DataLoader(final_test, shuffle=False)
-
-    # Load the data for tml
-    test_set = pd.read_csv(f'{opt.root_final_test}/raw/{opt.filename_final_test}')
-
-    experiments_gnn = os.path.join(current_dir, opt.log_dir_results, 'final_test', 'results_GNN')
-    experiments_tml = os.path.join(current_dir, opt.log_dir_results, 'final_test', f'results_{opt.tml_algorithm}')
-
-    for outer in range(1, opt.folds+1):
-        print('Analysing models trained using as test set {}'.format(outer))
-        for inner in range(1, opt.folds):
-    
-            real_inner = inner +1 if outer <= inner else inner
-            
-            print('Analysing models trained using as validation set {}'.format(real_inner))
-
-            model_dir = os.path.join(current_dir, opt.log_dir_results, 'learning_set', 'results_GNN', f'Fold_{outer}_test_set', f'Fold_{real_inner}_val_set')
-
-            model = torch.load(model_dir+'/model.pth')
-            model_params = torch.load(model_dir+'/model_params.pth')
-            train_loader = torch.load(model_dir+'/train_loader.pth')
-            val_loader = torch.load(model_dir+'/val_loader.pth')
-
-            network_report(log_dir=experiments_gnn,
-                           loaders=(train_loader, val_loader, test_loader),
-                           outer=outer,
-                           inner=real_inner,
-                           loss_lists=[None, None, None],
-                           model=model,
-                           model_params=model_params,
-                           best_epoch=None,
-                           save_all=False)
-            
-            tml_dir = os.path.join(current_dir, opt.log_dir_results, 'learning_set', f'results_{opt.tml_algorithm}', f'Fold_{outer}_test_set', f'Fold_{real_inner}_val_set')
-
-            model = joblib.load(tml_dir+'/model.sav')
-            train_data = pd.read_csv(tml_dir+'/train.csv')
-            val_data = pd.read_csv(tml_dir+'/val.csv')
-
-            tml_report(log_dir=experiments_tml,
-                       outer=outer,
-                       inner=real_inner,
-                       model=model,
-                       data=(train_data,val_data,test_set),
-                       save_all=False,)
-            
-                        
-        network_outer_report(log_dir=f"{experiments_gnn}/Fold_{outer}_test_set/", 
-                             outer=outer)
-        
-        network_outer_report(log_dir=f"{experiments_tml}/Fold_{outer}_test_set/", 
-                             outer=outer)
 
 
 def plot_results(exp_dir, opt):

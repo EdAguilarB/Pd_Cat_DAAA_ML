@@ -350,26 +350,20 @@ def extract_metrics(file):
 ######################################
 ######################################
 
-def load_variables(path:str):
+def load_variables(data):
 
-    descriptors = ['LVR1', 'LVR2', 'LVR3', 'LVR4', 'LVR5', 'LVR6', 'LVR7', 'VB', 'ER1', 'ER2', 'ER3', 'ER4', 'ER5', 'ER6',
-               'ER7', 'SStoutR1', 'SStoutR2', 'SStoutR3', 'SStoutR4', '%top']
-
-    data = pd.read_csv(path)
-
-    data = data.filter(descriptors)
 
     #remove erroneous data
     data = data.dropna(axis=0)
 
 
-    X = data.drop(['%top'], axis = 1)
+    X = data.drop(['%topA', 'index', 'fold'], axis = 1)
     X = RobustScaler().fit_transform(np.array(X))
-    y = data['%top']
+    y = data['%topA']
     print('Features shape: ', X.shape)
     print('Y target variable shape: ' , y.shape)
 
-    return X, y, descriptors
+    return X, y
 
 def choose_model(best_params, algorithm):
 
@@ -436,10 +430,10 @@ def split_data(df:pd.DataFrame):
 
 
 def predict_tml(model, data:pd.DataFrame):
-    descriptors = ['LVR1', 'LVR2', 'LVR3', 'LVR4', 'LVR5', 'LVR6', 'LVR7', 'VB', 'ER1', 'ER2', 'ER3', 'ER4', 'ER5', 'ER6',
-               'ER7', 'SStoutR1', 'SStoutR2', 'SStoutR3', 'SStoutR4']
+    descriptors = ['A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 
+                       'D(Hammett)', 'UL(volume)', 'LL(volume)', 'UR(volume)', 'LR(volume)', 'dielectric constant']
     y_pred = model.predict(data[descriptors])
-    y_true = list(data['%top'])
+    y_true = list(data['%topA'])
     idx = list(data['index'])
     return np.array(y_pred), np.array(y_true), np.array(idx)
 
