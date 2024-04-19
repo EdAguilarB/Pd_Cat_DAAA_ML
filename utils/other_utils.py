@@ -272,7 +272,7 @@ colors_n = {
     'O': 'red',
     'N': 'blue',
     'H': 'lightgray',
-    'B': 'brown',
+    'P': 'brown',
     'F': 'pink'
 }
 
@@ -281,7 +281,7 @@ colors_cb = {
     'O': '#FF0000',
     'N': '#0000FF',
     'H': '#FFFFFF',
-    'B': '#FFA500'
+    'P': '#FFA500'
 }
 
 sizes = {
@@ -289,7 +289,7 @@ sizes = {
     'O': 66/8,
     'N': 71/8,
     'H': 31/8,
-    'B': 84/8,
+    'P': 98/8,
     'F': 64/8
 }
 
