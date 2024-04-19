@@ -9,13 +9,14 @@ from torch_geometric.explain import Explainer, GNNExplainer, CaptumExplainer
 import pandas as pd
 import numpy as np
 from utils.utils_model import choose_model, hyperparam_tune, load_variables, \
-    split_data, tml_report, network_outer_report, network_report, extract_metrics
+    split_data, tml_report, network_outer_report, extract_metrics, descriptors_all, select_features
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, \
     accuracy_score, precision_score, recall_score
 from utils.plot_utils import create_bar_plot, create_violin_plot, create_strip_plot, \
     create_parity_plot, plot_importances
 from model.gcn import GCN_explain
 from math import sqrt
+from sklearn.preprocessing import RobustScaler
 import argparse
 import random
 from utils.other_utils import explain_dataset, visualize_score_features, \
@@ -43,9 +44,13 @@ def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str, represent
                      'UL(volume)', 'LL(volume)', 'UR(volume)', 'LR(volume)', 'dielectric constant', '%topA', 'fold', 'index']]
         descriptors = ['A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 
                        'D(Hammett)', 'UL(volume)', 'LL(volume)', 'UR(volume)', 'LR(volume)', 'dielectric constant']
+        
+    elif representation == 'rdkit':
+        data = data[['substrate_smiles', 'ligand_smiles' ,'solvent_smiles', '%topA', 'fold', 'index']]
+        data, descriptors = descriptors_all(data)
+        data = data[descriptors + ['%topA', 'fold', 'index']]
     
-    # Nested cross validation
-    ncv_iterator = split_data(data)
+
 
     # Initiate the counter of the total runs and the total number of runs
     counter = 0
@@ -58,6 +63,19 @@ def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str, represent
     X, y = load_variables(data)
     best_params = hyperparam_tune(X, y, choose_model(best_params=None, algorithm = ml_algorithm), opt.global_seed)
     print('Hyperparameter optimisation has finalised')
+
+    if representation == 'rdkit':
+        descriptors = list(select_features(choose_model(best_params, ml_algorithm), X=data[descriptors], y=data['%topA'], names=descriptors))
+        data = data[descriptors + ['%topA', 'fold', 'index']]
+
+    X  = data[descriptors]
+    X_scaled = RobustScaler().fit_transform(X=X)
+    scaled_df = pd.DataFrame(X_scaled, columns=descriptors)
+    data[descriptors] = scaled_df
+
+    # Nested cross validation
+    ncv_iterator = split_data(data)
+
     print("Training starting...")
     print("********************************")
     
@@ -96,8 +114,9 @@ def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str, represent
                        data = (train_set, val_set, test_set),
                        outer = outer,
                        inner = real_inner,
-                       model = model,
-                       )
+                       model = model, 
+                       descriptors=descriptors)
+
             
             # Reset the variables of the training
             del model, train_set, val_set, test_set
@@ -120,10 +139,8 @@ def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str, represent
 
 
 
-def plot_results(exp_dir, opt):
+def compare_results(exp_dir, opt, path1, path2, method1, method2):
 
-    experiments_gnn = os.path.join(exp_dir, 'results_GNN')
-    experiments_tml = os.path.join(exp_dir, f'results_{opt.tml_algorithm}')
 
     r2_gnn, mae_gnn, rmse_gnn = [], [], []
     accuracy_gnn, precision_gnn, recall_gnn = [], [], []
@@ -134,11 +151,11 @@ def plot_results(exp_dir, opt):
     
     for outer in range(1, opt.folds+1):
 
-        outer_gnn = os.path.join(experiments_gnn, f'Fold_{outer}_test_set')
-        outer_tml = os.path.join(experiments_tml, f'Fold_{outer}_test_set')
+        outer_m1 = os.path.join(path1, f'Fold_{outer}_test_set')
+        outer_m2 = os.path.join(path2, f'Fold_{outer}_test_set')
 
-        metrics_gnn = extract_metrics(file=outer_gnn+f'/performance_outer_test_fold{outer}.txt')
-        metrics_tml = extract_metrics(file=outer_tml+f'/performance_outer_test_fold{outer}.txt')
+        metrics_gnn = extract_metrics(file=outer_m1+f'/performance_outer_test_fold{outer}.txt')
+        metrics_tml = extract_metrics(file=outer_m2+f'/performance_outer_test_fold{outer}.txt')
 
         r2_gnn.append(metrics_gnn['R2'])
         mae_gnn.append(metrics_gnn['MAE'])
@@ -158,25 +175,25 @@ def plot_results(exp_dir, opt):
     
             real_inner = inner +1 if outer <= inner else inner
             
-            gnn_dir = os.path.join(experiments_gnn, f'Fold_{outer}_test_set', f'Fold_{real_inner}_val_set')
+            m1_dir = os.path.join(path1, f'Fold_{outer}_test_set', f'Fold_{real_inner}_val_set')
 
-            df_gnn = pd.read_csv(gnn_dir+'/predictions_test_set.csv')
+            df_gnn = pd.read_csv(m1_dir+'/predictions_test_set.csv')
             df_gnn['Test_Fold'] = outer
             df_gnn['Val_Fold'] = real_inner
-            df_gnn['Method'] = 'GNN'
+            df_gnn['Method'] = method1
 
             results_all = pd.concat([results_all, df_gnn], axis=0)
 
-            tml_dir = os.path.join(experiments_tml, f'Fold_{outer}_test_set', f'Fold_{real_inner}_val_set')
+            m2_dir = os.path.join(path2, f'Fold_{outer}_test_set', f'Fold_{real_inner}_val_set')
 
-            df_tml = pd.read_csv(tml_dir+'/predictions_test_set.csv')
+            df_tml = pd.read_csv(m2_dir+'/predictions_test_set.csv')
             df_tml['Test_Fold'] = outer
             df_tml['Val_Fold'] = real_inner
-            df_tml['Method'] = opt.tml_algorithm
+            df_tml['Method'] = method2
 
             results_all = pd.concat([results_all, df_tml], axis=0)
 
-    save_dir = f'{exp_dir}/GNN_vs_{opt.tml_algorithm}'
+    save_dir = f'{exp_dir}/{method1}_vs_{method2}'
     os.makedirs(save_dir, exist_ok=True)
     
     mae_mean_gnn = np.array([entry['mean'] for entry in mae_gnn])
@@ -203,8 +220,8 @@ def plot_results(exp_dir, opt):
         (rmse_mean_gnn + rmse_gnn_std).max(), 
         (rmse_mean_tml + rmse_tml_std).max()]))
     
-    create_bar_plot(means=(mae_mean_gnn, mae_mean_tml), stds=(mae_gnn_std, mae_tml_std), min = minimun, max = maximun, metric = 'MAE', save_path= save_dir, tml_algorithm=opt.tml_algorithm)
-    create_bar_plot(means=(rmse_mean_gnn, rmse_mean_tml), stds=(rmse_gnn_std, rmse_tml_std), min = minimun, max = maximun, metric = 'RMSE', save_path= save_dir, tml_algorithm=opt.tml_algorithm)
+    create_bar_plot(means=(mae_mean_gnn, mae_mean_tml), stds=(mae_gnn_std, mae_tml_std), min = minimun, max = maximun, metric = 'MAE', save_path= save_dir, method1=method1, method2=method2)
+    create_bar_plot(means=(rmse_mean_gnn, rmse_mean_tml), stds=(rmse_gnn_std, rmse_tml_std), min = minimun, max = maximun, metric = 'RMSE', save_path= save_dir, method1=method1, method2=method2)
 
     r2_mean_gnn = np.array([entry['mean'] for entry in r2_gnn])
     r2_gnn_std = np.array([entry['std'] for entry in r2_gnn])
@@ -253,10 +270,10 @@ def plot_results(exp_dir, opt):
     ]))
     
     
-    create_bar_plot(means=(r2_mean_gnn, r2_mean_tml), stds=(r2_gnn_std, r2_tml_std), min = minimun, max = maximun, metric = 'R2', save_path= save_dir, tml_algorithm=opt.tml_algorithm)
-    create_bar_plot(means=(accuracy_mean_gnn, accuracy_mean_tml), stds=(accuracy_gnn_std, accuracy_tml_std), min = minimun, max = maximun, metric = 'Accuracy', save_path= save_dir, tml_algorithm=opt.tml_algorithm)
-    create_bar_plot(means=(precision_mean_gnn, precision_mean_tml), stds=(precision_gnn_std, precision_tml_std), min = minimun, max = maximun, metric = 'Precision', save_path= save_dir, tml_algorithm=opt.tml_algorithm)
-    create_bar_plot(means=(recall_mean_gnn, recall_mean_tml), stds=(recall_gnn_std, recall_tml_std), min = minimun, max = maximun, metric = 'Recall', save_path= save_dir, tml_algorithm=opt.tml_algorithm)
+    create_bar_plot(means=(r2_mean_gnn, r2_mean_tml), stds=(r2_gnn_std, r2_tml_std), min = minimun, max = maximun, metric = 'R2', save_path= save_dir, method1=method1, method2=method2)
+    create_bar_plot(means=(accuracy_mean_gnn, accuracy_mean_tml), stds=(accuracy_gnn_std, accuracy_tml_std), min = minimun, max = maximun, metric = 'Accuracy', save_path= save_dir, method1=method1, method2=method2)
+    create_bar_plot(means=(precision_mean_gnn, precision_mean_tml), stds=(precision_gnn_std, precision_tml_std), min = minimun, max = maximun, metric = 'Precision', save_path= save_dir, method1=method1, method2=method2)
+    create_bar_plot(means=(recall_mean_gnn, recall_mean_tml), stds=(recall_gnn_std, recall_tml_std), min = minimun, max = maximun, metric = 'Recall', save_path= save_dir, method1=method1, method2=method2)
 
     results_all['Error'] = results_all['real_%top'] - results_all['predicted_%top']
     results_all['real_face'] = np.where(results_all['real_%top'] > 50, 1, 0)
@@ -265,7 +282,7 @@ def plot_results(exp_dir, opt):
     create_violin_plot(data=results_all, save_path= save_dir)
     create_strip_plot(data=results_all, save_path= save_dir)
 
-    create_parity_plot(data=results_all, save_path= save_dir, tml_algorithm=opt.tml_algorithm)
+    create_parity_plot(data=results_all, save_path= save_dir, method1=method1, method2=method2)
 
     results_all = results_all.reset_index(drop=True)
     results_all.to_csv(f'{save_dir}/predictions_all.csv', index=False)
@@ -273,11 +290,11 @@ def plot_results(exp_dir, opt):
 
     print('All plots have been saved in the directory {}'.format(save_dir))
 
-    gnn_predictions = results_all[results_all['Method'] == 'GNN']
+    gnn_predictions = results_all[results_all['Method'] == method1]
 
     print('\n')
 
-    print('Final metrics for GNN:')
+    print(f'Final metrics for {method1}:')
 
     print('Accuracy: {:.3f}'.format(accuracy_score(gnn_predictions['real_face'], gnn_predictions['predicted_face'])))
     print('Precision: {:.3f}'.format(precision_score(gnn_predictions['real_face'], gnn_predictions['predicted_face'])))
@@ -286,8 +303,8 @@ def plot_results(exp_dir, opt):
     print('MAE: {:.3f}'.format(mean_absolute_error(gnn_predictions['real_%top'], gnn_predictions['predicted_%top'])))
     print('RMSE: {:.3f} \n'.format(sqrt(mean_squared_error(gnn_predictions['real_%top'], gnn_predictions['predicted_%top']))))
     
-    tml_predictions = results_all[results_all['Method'] == opt.tml_algorithm]
-    print(f'Final metrics for {opt.tml_algorithm}:')
+    tml_predictions = results_all[results_all['Method'] == method2]
+    print(f'Final metrics for {method2}:')
     print('Accuracy: {:.3f}'.format(accuracy_score(tml_predictions['real_face'], tml_predictions['predicted_face'])))
     print('Precision: {:.3f}'.format(precision_score(tml_predictions['real_face'], tml_predictions['predicted_face'])))
     print('Recall: {:.3f}'.format(recall_score(tml_predictions['real_face'], tml_predictions['predicted_face'])))
@@ -315,45 +332,6 @@ def explain_model(exp_path:str, opt: argparse.Namespace) -> None:
     model = GCN_explain(opt, n_node_features=all_data[0].num_node_features)
     model_params = torch.load(os.path.join(model_path, 'model_params.pth'))
     model.load_state_dict(model_params)
-
-    explainer = Explainer(
-        model=model,
-        algorithm=GNNExplainer(),
-        explanation_type='model',
-        node_mask_type='attributes',
-        edge_mask_type='object',
-        model_config=dict(
-            mode='regression',
-            task_level='graph',
-            return_type='raw',
-        ),
-    )
-
-    loader = DataLoader(test_loader.dataset)
-
-
-    ligand_masks, substrate_masks, boron_masks, all_masks  = explain_dataset(test_loader.dataset, explainer)
-
-    ligands = visualize_score_features(score = ligand_masks)
-    ligands = ligands.loc[ligands['score'] != 0]
-    ligands['labels'] = ligands['labels'].apply(lambda m: 'L. '+m)
-    print('Ligand node features score: \n', ligands)
-
-    substrate = visualize_score_features(score = substrate_masks)
-    substrate = substrate.loc[substrate['score'] != 0]
-    substrate['labels'] = substrate['labels'].apply(lambda m: 'S. '+m)
-    print('Substrate node features score: \n', substrate)
-
-    boron = visualize_score_features(score = boron_masks)
-    boron = boron.loc[boron['score'] != 0]
-    boron['labels'] = boron['labels'].apply(lambda m: 'BR. '+m)
-    print('Boron node features score: \n', boron)
-
-    df = pd.concat([ligands, substrate, boron])
-    df = df.sort_values('score', ascending=False)
-    df['score'] = df['score'].astype(int)
-
-    plot_importances(df = df, save_path=os.path.join(exp_path, f'Fold_{outer}_test_set', f'Fold_{inner}_val_set'))
 
 
     explainer = Explainer(

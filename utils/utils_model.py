@@ -15,6 +15,9 @@ from math import sqrt
 from utils.plot_utils import *
 from icecream import ic
 from sklearn.preprocessing import RobustScaler
+from rdkit.Chem import Fragments, Descriptors
+from rdkit import Chem
+from sklearn.feature_selection import RFECV
 
 
 def calculate_metrics(y_true:list, y_predicted: list,  task = 'r'):
@@ -206,7 +209,7 @@ def network_report(log_dir,
     file1.write("---------------------------------------------------------\n")
 
     create_st_parity_plot(real = y_true, predicted = y_pred, figure_name = 'outer_{}_inner_{}'.format(outer, inner), save_path = "{}".format(log_dir))
-    create_it_parity_plot(real = y_true, predicted = y_pred, index = idx, figure_name='outer_{}_inner_{}.html'.format(outer, inner), save_path="{}".format(log_dir))
+    #create_it_parity_plot(real = y_true, predicted = y_pred, index = idx, figure_name='outer_{}_inner_{}.html'.format(outer, inner), save_path="{}".format(log_dir))
 
     file1.write("OUTLIERS (TEST SET)\n")
     error_test = [(y_pred[i] - y_true[i]) for i in range(len(y_pred))]
@@ -350,6 +353,79 @@ def extract_metrics(file):
 ######################################
 ######################################
 
+def count_fragments(mol, m_type):
+    mol_frags = {}
+    for i in dir(Fragments):
+        if 'fr' in i:
+            item = getattr(Fragments,i)
+            if callable(item):
+                mol_frags[i+'_'+m_type] = item(mol)
+    return mol_frags
+
+
+#calculates molecular descriptors given a molecule and a molecule type
+def calc_descriptors(mol, m_type):
+    descriptors = ['MaxEStateIndex', 'MinEStateIndex', 'MaxAbsEStateIndex', 'MinAbsEStateIndex','qed','MaxPartialCharge','MinPartialCharge',
+               'MaxAbsPartialCharge', 'MinAbsPartialCharge', 'BalabanJ', 'BertzCT', 'Chi0', 'Chi0n', 'Chi0v', 'Chi1', 'Chi1n', 'Chi1v',
+               'HallKierAlpha', 'TPSA', 'MolLogP', 'MolMR']
+    mol_desc = {}
+    for i in dir(Descriptors):
+        if i in descriptors:
+            item = getattr(Descriptors,i)
+            if callable(item):
+                mol_desc[i+'_'+m_type] = item(mol)
+    return mol_desc
+
+def descriptors_all(data:pd.DataFrame):
+
+    #count fragments of substrate
+    frags_all = pd.DataFrame()
+    for index, row in data.iterrows():
+        smiles = row['substrate_smiles']
+        frags = pd.DataFrame(count_fragments(Chem.MolFromSmiles(smiles), 'substrate'), index=[index])
+        frags_all = pd.concat([frags_all, frags], axis= 0)
+    frags_all = frags_all.loc[:, (frags_all != 0).any(axis=0)]
+
+    #calculate descriptors of ligands
+    desc_all = pd.DataFrame()
+    for index, row in data.iterrows():
+        smiles = row['ligand_smiles']
+        desc = pd.DataFrame(calc_descriptors(Chem.MolFromSmiles(smiles), 'ligand'), index=[index])
+        desc_all = pd.concat([desc_all, desc], axis= 0)
+    desc_all = desc_all.loc[:, (desc_all != 0).any(axis=0)]
+
+    #calculate Hall-Kier Alpha of solvent
+    X = pd.concat([frags_all, desc_all], axis=1)
+    X['HA_solv'] = data['solvent_smiles'].apply(lambda m: Descriptors.HallKierAlpha(Chem.MolFromSmiles(m)))
+
+    #get features names
+    feat_names = list(X.columns)
+
+    data = pd.concat([data, X], axis=1)
+
+    print('Features shape: ', X.shape)
+
+    return data, feat_names
+
+
+#selects the best features for predicting given a ML estimator
+def select_features(model, X, y, names):
+    print('Using ', model, 'as estimator of importance.')
+    rfecv = RFECV(estimator = model,
+                step=1,
+                cv=10,
+                scoring='neg_root_mean_squared_error',
+                min_features_to_select=1)
+    rfecv.fit(X, y)
+    print(f"Optimal number of features: {rfecv.n_features_}")
+    names = rfecv.get_feature_names_out(names)
+    print('The selected features are:')
+    print(names, '\n')
+
+    return names
+
+
+
 def load_variables(data):
 
 
@@ -429,9 +505,7 @@ def split_data(df:pd.DataFrame):
             yield deepcopy((train, val, test))
 
 
-def predict_tml(model, data:pd.DataFrame):
-    descriptors = ['A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 
-                       'D(Hammett)', 'UL(volume)', 'LL(volume)', 'UR(volume)', 'LR(volume)', 'dielectric constant']
+def predict_tml(model, data:pd.DataFrame, descriptors:list = None):
     y_pred = model.predict(data[descriptors])
     y_true = list(data['%topA'])
     idx = list(data['index'])
@@ -443,6 +517,7 @@ def tml_report(log_dir,
                 inner,
                model, 
                data, 
+               descriptors,
                save_all=True):
     
     #1) create a directory to store the results
@@ -477,7 +552,7 @@ def tml_report(log_dir,
     file1.write("Dataset Size = {}\n".format(N_tot))
     file1.write("***************\n")
 
-    y_pred, y_true, idx = predict_tml(model, train_data)
+    y_pred, y_true, idx = predict_tml(model, train_data, descriptors)
     metrics, metrics_names = calculate_metrics(y_true, y_pred, task = 'r')
 
     file1.write("Training set\n")
@@ -487,7 +562,7 @@ def tml_report(log_dir,
         file1.write("{} = {:.3f}\n".format(name, value))
     
     file1.write("***************\n")
-    y_pred, y_true, idx = predict_tml(model, val_data)
+    y_pred, y_true, idx = predict_tml(model, val_data, descriptors)
     metrics, metrics_names = calculate_metrics(y_true, y_pred, task = 'r')
 
     file1.write("Validation set\n")
@@ -498,7 +573,7 @@ def tml_report(log_dir,
     
     file1.write("***************\n")
 
-    y_pred, y_true, idx = predict_tml(model=model, data=test_data)
+    y_pred, y_true, idx = predict_tml(model=model, data=test_data, descriptors=descriptors)
 
     pd.DataFrame({'real_%top': y_true, 'predicted_%top': y_pred, 'index': idx}).to_csv("{}/predictions_test_set.csv".format(log_dir))
 
@@ -528,7 +603,7 @@ def tml_report(log_dir,
     file1.write("---------------------------------------------------------\n")
 
     create_st_parity_plot(real = y_true, predicted = y_pred, figure_name = 'outer_{}_inner_{}'.format(outer, inner), save_path = "{}".format(log_dir))
-    create_it_parity_plot(real = y_true, predicted = y_pred, index = idx, figure_name='outer_{}_inner_{}.html'.format(outer, inner), save_path="{}".format(log_dir))
+    #create_it_parity_plot(real = y_true, predicted = y_pred, index = idx, figure_name='outer_{}_inner_{}.html'.format(outer, inner), save_path="{}".format(log_dir))
 
     file1.write("OUTLIERS (TEST SET)\n")
     error_test = [(y_pred[i] - y_true[i]) for i in range(len(y_pred))]

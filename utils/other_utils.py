@@ -34,7 +34,7 @@ def explain_dataset(dataset: List,
 
         na_ligand = AddHs(Chem.MolFromSmiles(graph.ligand[0])).GetNumAtoms()
         na_substrate = AddHs(Chem.MolFromSmiles(graph.substrate[0])).GetNumAtoms()
-        na_boron = AddHs(Chem.MolFromSmiles(graph.boron[0])).GetNumAtoms()
+        na_boron = AddHs(Chem.MolFromSmiles(graph.solvent[0])).GetNumAtoms()
 
         ia_ligand = 0
         fa_ligand = na_ligand
@@ -85,7 +85,7 @@ def visualize_score_features(
 
         na_ligand = AddHs(Chem.MolFromSmiles(graph.ligand[0])).GetNumAtoms()
         na_substrate = AddHs(Chem.MolFromSmiles(graph.substrate[0])).GetNumAtoms()
-        na_boron = AddHs(Chem.MolFromSmiles(graph.boron[0])).GetNumAtoms()
+        na_boron = AddHs(Chem.MolFromSmiles(graph.solvent[0])).GetNumAtoms()
 
         if mol == 'ligand':
             ia = 0
@@ -191,7 +191,7 @@ def mol_prep(mol_graph, mol:str):
 
     mol_l = AddHs(Chem.MolFromSmiles(mol_graph.ligand[0]))
     mol_s = AddHs(Chem.MolFromSmiles(mol_graph.substrate[0]))
-    mol_b = AddHs(Chem.MolFromSmiles(mol_graph.boron[0]))
+    mol_b = AddHs(Chem.MolFromSmiles(mol_graph.solvent[0]))
 
     atoms_l = mol_l.GetNumAtoms()
     atoms_s = mol_s.GetNumAtoms()

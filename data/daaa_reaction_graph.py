@@ -96,6 +96,7 @@ class daaa_reaction(reaction_graph):
     def _get_node_feats(self, mol):
 
         all_node_feats = []
+        CIPtuples = dict(Chem.FindMolChiralCenters(mol, includeUnassigned=False))
 
         for atom in mol.GetAtoms():
             node_feats = []
@@ -110,7 +111,7 @@ class daaa_reaction(reaction_graph):
             # Feature 5: In Ring
             #node_feats += [atom.IsInRing()]
             # Feature 6: Chirality
-            node_feats += self._one_h_e(atom.GetChiralTag(),[0,1,2])
+            node_feats += self._one_h_e(self._get_atom_chirality(CIPtuples, atom.GetIdx()), ['R', 'S'], 'No_Stereo_Center')
 
             # Append node features to matrix
             all_node_feats.append(node_feats)

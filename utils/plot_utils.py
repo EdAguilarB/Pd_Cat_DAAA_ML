@@ -113,7 +113,6 @@ def create_training_plot(df, save_path):
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.grid(False)
-    plt.legend()
 
     # Save the plot in high resolution (adjust file format as needed)
     plt.savefig('{}/loss_vs_epochs.png'.format(save_path), bbox_inches='tight')
@@ -121,7 +120,7 @@ def create_training_plot(df, save_path):
     plt.close()
 
 
-def create_bar_plot(means:tuple, stds:tuple, min:float, max:float, metric:str, save_path:str, tml_algorithm:str):
+def create_bar_plot(means:tuple, stds:tuple, min:float, max:float, metric:str, save_path:str, method1:str, method2:str):
 
     bar_width = 0.35
 
@@ -131,8 +130,8 @@ def create_bar_plot(means:tuple, stds:tuple, min:float, max:float, metric:str, s
     folds = list(range(1, 11))
     index = np.arange(10)
 
-    plt.bar(index, mean_gnn, bar_width, label='GNN Approach', yerr=std_gnn, capsize=5)
-    plt.bar(index+bar_width, mean_tml, bar_width, label=f'{tml_algorithm.upper()} Approach', yerr=std_tml, capsize=5)
+    plt.bar(index, mean_gnn, bar_width, label=f'{method1} Approach', yerr=std_gnn, capsize=5)
+    plt.bar(index+bar_width, mean_tml, bar_width, label=f'{method2} Approach', yerr=std_tml, capsize=5)
 
     plt.ylim(min*.99, max *1.01)
     plt.xlabel('Fold Used as Test Set', fontsize = 16)
@@ -144,6 +143,8 @@ def create_bar_plot(means:tuple, stds:tuple, min:float, max:float, metric:str, s
 
     plt.xticks(fontsize=14)
     plt.yticks(fontsize=14)
+
+    plt.legend(fontsize=12)
 
     plt.savefig(os.path.join(save_path, f'{metric}_GNN_vs_TML'), dpi=300, bbox_inches='tight')
 
@@ -181,9 +182,9 @@ def create_strip_plot(data, save_path:str):
     plt.savefig(os.path.join(save_path, f'Error_distribution_GNN_vs_TML_strip_plot'), dpi=300, bbox_inches='tight')
     plt.close()
 
-def create_parity_plot(data: pd.DataFrame, save_path:str, tml_algorithm:str):
+def create_parity_plot(data: pd.DataFrame, save_path:str, method1:str, method2:str):
 
-    results_gnn = data[data['Method'] == 'GNN']
+    results_gnn = data[data['Method'] == method1]
 
     g = jointplot(x="real_%top", y="predicted_%top", data=results_gnn,
                   kind="reg", truncate=False,
@@ -209,11 +210,11 @@ def create_parity_plot(data: pd.DataFrame, save_path:str, tml_algorithm:str):
 
     g.ax_joint.tick_params(axis='both', which='major', labelsize=15)
 
-    plt.savefig(os.path.join(save_path, f'parity_plot_GNN'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(save_path, f'parity_plot_{method1}'), dpi=300, bbox_inches='tight')
     plt.close()
     
 
-    results_tml = data[data['Method'] == tml_algorithm]
+    results_tml = data[data['Method'] == method2]
 
     g = jointplot(x="real_%top", y="predicted_%top", data=results_tml,
                   kind="reg", truncate=False,
@@ -239,7 +240,7 @@ def create_parity_plot(data: pd.DataFrame, save_path:str, tml_algorithm:str):
 
     g.ax_joint.tick_params(axis='both', which='major', labelsize=15)
 
-    plt.savefig(os.path.join(save_path, f'parity_plot_{tml_algorithm}'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(save_path, f'parity_plot_{method2}'), dpi=300, bbox_inches='tight')
     plt.close()
 
 

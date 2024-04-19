@@ -8,7 +8,7 @@ from call_methods import make_network, create_loaders
 from utils.utils_model import train_network, eval_network, network_report, network_outer_report
 from torch_geometric import seed_everything
 from icecream import ic
-from utils.experiments import train_tml_model_nested_cv
+from utils.experiments import train_tml_model_nested_cv, compare_results, explain_model
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -135,11 +135,47 @@ def run_experiment() -> None:
     
     print('All runs completed')
 
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd())
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb')
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='lr')
+
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), representation='rdkit')
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb', representation='rdkit')
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='lr', representation='rdkit')
+
+    compare_results(opt=opt, exp_dir=os.getcwd()+'/results/novel_vs_rdkit',
+                    path1='results/novel_feat/results_rf', path2='results/rdkit/results_rf', 
+                    method1='novel_rf', method2='rdkit_rf')
+
+    compare_results(opt=opt, exp_dir=os.getcwd()+'/results/novel_vs_rdkit',
+                    path1='results/novel_feat/results_gb', path2='results/rdkit/results_gb', 
+                    method1='novel_gb', method2='rdkit_gb')
+
+    compare_results(opt=opt, exp_dir=os.getcwd()+'/results/novel_vs_rdkit',
+                    path1='results/novel_feat/results_lr', path2='results/rdkit/results_lr', 
+                    method1='novel_lr', method2='rdkit_lr')
+    
+
+    compare_results(opt=opt, exp_dir=os.getcwd()+'/results/novel_vs_gnn',
+                    path1='results/novel_feat/results_rf', path2='results/results_GNN', 
+                    method1='novel_rf', method2='HCat-GNet')
+
+    compare_results(opt=opt, exp_dir=os.getcwd()+'/results/novel_vs_gnn',
+                    path1='results/novel_feat/results_gb', path2='results/results_GNN', 
+                    method1='novel_gb', method2='HCat-GNet')
+
+    compare_results(opt=opt, exp_dir=os.getcwd()+'/results/novel_vs_gnn',
+                    path1='results/novel_feat/results_lr', path2='results/results_GNN', 
+                    method1='novel_lr', method2='HCat-GNet')
+
 
 opt = BaseOptions().parse()
 
 if __name__ == "__main__": 
     #run_experiment() 
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd())
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb')
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='lr')
+
+    explain_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'results_GNN'), opt=opt)
+
+
+
+
