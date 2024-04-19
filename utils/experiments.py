@@ -5,7 +5,7 @@ from options.base_options import BaseOptions
 import torch
 from tqdm import tqdm
 from torch_geometric.loader import DataLoader
-from torch_geometric.explain import Explainer, GNNExplainer, CaptumExplainer
+from torch_geometric.explain import Explainer, CaptumExplainer
 import pandas as pd
 import numpy as np
 from utils.utils_model import choose_model, hyperparam_tune, load_variables, \
@@ -13,14 +13,16 @@ from utils.utils_model import choose_model, hyperparam_tune, load_variables, \
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, \
     accuracy_score, precision_score, recall_score
 from utils.plot_utils import create_bar_plot, create_violin_plot, create_strip_plot, \
-    create_parity_plot, plot_importances
+    create_parity_plot, plot_importances, plot_shap
 from model.gcn import GCN_explain
 from math import sqrt
 from sklearn.preprocessing import RobustScaler
 import argparse
+import shap
+import matplotlib.pyplot as plt
+from matplotlib import cm
 import random
-from utils.other_utils import explain_dataset, visualize_score_features, \
-    plot_molecule_importance, get_graph_by_idx
+from utils.other_utils import plot_molecule_importance, get_graph_by_idx
 
 from icecream import ic
 
@@ -311,9 +313,34 @@ def compare_results(exp_dir, opt, path1, path2, method1, method2):
     print('R2: {:.3f}'.format(r2_score(tml_predictions['real_%top'], tml_predictions['predicted_%top'])))
     print('MAE: {:.3f}'.format(mean_absolute_error(tml_predictions['real_%top'], tml_predictions['predicted_%top'])))
     print('RMSE: {:.3f} \n'.format(sqrt(mean_squared_error(tml_predictions['real_%top'], tml_predictions['predicted_%top']))))
+
+
+def explain_tml_model(exp_path:str, opt: argparse.Namespace, feat_names) -> None:   
+
+    outer, inner = opt.explain_model[0], opt.explain_model[1]
+
+    print('Analysing outer {}, inner {}'.format(outer, inner))
+
+    model = joblib.load(os.path.join(exp_path, f'Fold_{outer}_test_set', f'Fold_{inner}_val_set', 'model.sav'))
+    explainer = shap.Explainer(model, output_names=feat_names)
+
+    train = pd.read_csv(os.path.join(exp_path, f'Fold_{outer}_test_set', f'Fold_{inner}_val_set', 'train.csv'))
+    val = pd.read_csv(os.path.join(exp_path, f'Fold_{outer}_test_set', f'Fold_{inner}_val_set', 'val.csv'))
+    test = pd.read_csv(os.path.join(exp_path, f'Fold_{outer}_test_set', f'Fold_{inner}_val_set', 'test.csv'))
+
+    all_data = pd.concat([train, val, test], axis=0)
+
+    shap_values = explainer.shap_values(all_data[feat_names])
+
+    print(f'Ploting shap analysis for {str(model)}:\n')
+
+
+    plot_shap(shap_values, all_data[feat_names], save_path=os.path.join(exp_path, f'Fold_{outer}_test_set', f'Fold_{inner}_val_set'), feat_names=feat_names)
+
+
     
 
-def explain_model(exp_path:str, opt: argparse.Namespace) -> None:
+def explain_GNN_model(exp_path:str, opt: argparse.Namespace) -> None:
 
     outer, inner = opt.explain_model[0], opt.explain_model[1]
 

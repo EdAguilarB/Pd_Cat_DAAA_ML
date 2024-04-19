@@ -39,7 +39,7 @@ class BaseOptions:
         self.parser.add_argument(
             '--mol_cols',
             type=list,
-            default=['substrate_smiles', 'ligand_smiles', 'solvent_smiles'],
+            default=['ligand_smiles', 'substrate_smiles', 'solvent_smiles'],
             help='Column name of the molecule',
         )
 

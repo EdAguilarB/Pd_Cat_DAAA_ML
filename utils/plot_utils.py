@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 import os
 from seaborn import violinplot, stripplot, jointplot, barplot
+import shap
+from matplotlib import cm
 from icecream import ic
 
 def create_st_parity_plot(real, predicted, figure_name, save_path=None):
@@ -243,6 +245,24 @@ def create_parity_plot(data: pd.DataFrame, save_path:str, method1:str, method2:s
     plt.savefig(os.path.join(save_path, f'parity_plot_{method2}'), dpi=300, bbox_inches='tight')
     plt.close()
 
+
+def plot_shap(shap_values, X, feat_names, save_path:str):
+
+    plt.figure()
+    shap.summary_plot(shap_values, X, max_display = 10, color_bar_label = 'Descriptor value', show = False, plot_size= (14,5.5), feature_names=feat_names)
+    plt.grid()
+    plt.gcf().axes[-1].set_aspect('auto')
+    plt.tight_layout()
+
+    plt.gcf().axes[-1].set_box_aspect(50)
+    #Changing plot colours
+    for fc in plt.gcf().get_children():
+        for fcc in fc.get_children():
+            if hasattr(fcc, "set_cmap"):
+                fcc.set_cmap(cm.get_cmap('coolwarm'))
+    
+    plt.savefig(os.path.join(save_path, 'shap_summary_plot'), dpi=300, bbox_inches='tight')
+    plt.show()
 
 
 def plot_importances(df, save_path: str):
