@@ -135,6 +135,10 @@ def run_experiment() -> None:
     
     print('All runs completed')
 
+    explain_GNN_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'results_GNN'), opt=opt)
+
+    explain_GNN_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'results_GNN'), opt=opt)
+
     train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd())
     train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb')
     train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='lr')
@@ -197,9 +201,7 @@ def run_experiment() -> None:
 opt = BaseOptions().parse()
 
 if __name__ == "__main__": 
-    #run_experiment() 
-
-    explain_GNN_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'results_GNN'), opt=opt)
+    run_experiment() 
 
 
 
