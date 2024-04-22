@@ -8,7 +8,7 @@ from torch_geometric.loader import DataLoader
 from torch_geometric.explain import Explainer, CaptumExplainer
 import pandas as pd
 import numpy as np
-from utils.utils_model import choose_model, hyperparam_tune, load_variables, \
+from utils.utils_model import choose_model, hyperparam_tune, load_variables, electronic_descriptor, \
     split_data, tml_report, network_outer_report, extract_metrics, descriptors_all, select_features
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, \
     accuracy_score, precision_score, recall_score
@@ -29,7 +29,7 @@ from icecream import ic
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str, representation = 'novel_feat', ml_algorithm = 'rf') -> None:
+def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str, representation = 'novel_feat', ml_algorithm = 'rf', e_descriptor = 'v1') -> None:
 
     print('Initialising chiral ligands selectivity prediction using a traditional ML approach.')
     
@@ -42,9 +42,9 @@ def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str, represent
 
     # Select the descriptors
     if representation == 'novel_feat':
-        data = data[['A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 'D(Hammett)', 
+        data = data[[electronic_descriptor(e_descriptor), 'A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 'D(Hammett)', 
                      'UL(volume)', 'LL(volume)', 'UR(volume)', 'LR(volume)', 'dielectric constant', '%topA', 'fold', 'index']]
-        descriptors = ['A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 
+        descriptors = [electronic_descriptor(e_descriptor), 'A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 
                        'D(Hammett)', 'UL(volume)', 'LL(volume)', 'UR(volume)', 'LR(volume)', 'dielectric constant']
         
     elif representation == 'rdkit':
@@ -112,7 +112,7 @@ def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str, represent
                   format(outer, real_inner, counter, TOT_RUNS, train_rmse, val_rmse, test_rmse) )
             
             # Generate a report of the model performance
-            tml_report(log_dir=f"{current_dir}/{opt.log_dir_results}/{representation}/results_{ml_algorithm}/",
+            tml_report(log_dir=f"{current_dir}/{opt.log_dir_results}/{representation}/results_{ml_algorithm}/e_descriptor_{e_descriptor}/",
                        data = (train_set, val_set, test_set),
                        outer = outer,
                        inner = real_inner,
@@ -128,7 +128,7 @@ def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str, represent
 
         # Generate a report of the model performance for the outer/test fold
         network_outer_report(
-            log_dir=f"{current_dir}/{opt.log_dir_results}/{representation}/results_{ml_algorithm}/Fold_{outer}_test_set/",
+            log_dir=f"{current_dir}/{opt.log_dir_results}/{representation}/results_{ml_algorithm}/e_descriptor_{e_descriptor}/Fold_{outer}_test_set/",
             outer=outer,
         )
 

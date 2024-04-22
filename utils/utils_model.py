@@ -353,6 +353,17 @@ def extract_metrics(file):
 ######################################
 ######################################
 
+def electronic_descriptor(descriptor = 'v1'):
+    if descriptor == 'v1':
+        return 'A(Hammett)'
+    if descriptor == 'v2':
+        return 'A(Hammett sum)'
+    if descriptor == 'v3':
+        return 'A(Hammett avg.)'
+    if descriptor == 'v4':
+        return 'A(C-NMR-ipso-shifts)'
+
+
 def count_fragments(mol, m_type):
     mol_frags = {}
     for i in dir(Fragments):
