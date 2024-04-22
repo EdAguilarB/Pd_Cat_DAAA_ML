@@ -137,11 +137,19 @@ def run_experiment() -> None:
 
     explain_GNN_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'results_GNN'), opt=opt)
 
-    explain_GNN_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'results_GNN'), opt=opt)
 
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd())
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb')
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='lr')
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='rf', e_descriptor='v1')
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='rf', e_descriptor='v2')
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='rf', e_descriptor='v3')
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='rf', e_descriptor='v4')
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb', e_descriptor='v1')
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb', e_descriptor='v2')
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb', e_descriptor='v3')
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb', e_descriptor='v4')
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='lr', e_descriptor='v1')
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='lr', e_descriptor='v2')
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='lr', e_descriptor='v3')
+    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='lr', e_descriptor='v4')
 
     train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), representation='rdkit')
     train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb', representation='rdkit')
@@ -202,9 +210,4 @@ opt = BaseOptions().parse()
 
 if __name__ == "__main__": 
     run_experiment() 
-
-
-
-
-
 
