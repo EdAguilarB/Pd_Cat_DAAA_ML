@@ -155,30 +155,13 @@ def run_experiment() -> None:
     train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb', representation='rdkit')
     train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='lr', representation='rdkit')
 
-    compare_results(opt=opt, exp_dir=os.getcwd()+'/results/novel_vs_rdkit',
-                    path1='results/novel_feat/results_rf', path2='results/rdkit/results_rf', 
-                    method1='novel_rf', method2='rdkit_rf')
+    compare_results(opt=opt, exp_dir=os.getcwd()+'/results/comparison/',
+                    path1='results/novel_feat/results_rf/e_descriptor_v2', path2='results/results_GNN', 
+                    method1='novel_rf_V2', method2='HCat-GNet')
 
-    compare_results(opt=opt, exp_dir=os.getcwd()+'/results/novel_vs_rdkit',
-                    path1='results/novel_feat/results_gb', path2='results/rdkit/results_gb', 
-                    method1='novel_gb', method2='rdkit_gb')
-
-    compare_results(opt=opt, exp_dir=os.getcwd()+'/results/novel_vs_rdkit',
-                    path1='results/novel_feat/results_lr', path2='results/rdkit/results_lr', 
-                    method1='novel_lr', method2='rdkit_lr')
-    
-
-    compare_results(opt=opt, exp_dir=os.getcwd()+'/results/novel_vs_gnn',
-                    path1='results/novel_feat/results_rf', path2='results/results_GNN', 
-                    method1='novel_rf', method2='HCat-GNet')
-
-    compare_results(opt=opt, exp_dir=os.getcwd()+'/results/novel_vs_gnn',
-                    path1='results/novel_feat/results_gb', path2='results/results_GNN', 
-                    method1='novel_gb', method2='HCat-GNet')
-
-    compare_results(opt=opt, exp_dir=os.getcwd()+'/results/novel_vs_gnn',
-                    path1='results/novel_feat/results_lr', path2='results/results_GNN', 
-                    method1='novel_lr', method2='HCat-GNet')
+    compare_results(opt=opt, exp_dir=os.getcwd()+'/results/comparison/',
+                    path1='results/novel_feat/results_rf/e_descriptor_v2', path2='results/rdkit/results_gb', 
+                    method1='novel_rf_V2', method2='rdkit_gb')
     
     novel_desc = ['A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 
                        'D(Hammett)', 'UL(volume)', 'LL(volume)', 'UR(volume)', 'LR(volume)', 'dielectric constant']
@@ -209,5 +192,9 @@ def run_experiment() -> None:
 opt = BaseOptions().parse()
 
 if __name__ == "__main__": 
-    run_experiment() 
+    #run_experiment() 
+
+    explain_GNN_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'results_GNN'), opt=opt)
+
+
 

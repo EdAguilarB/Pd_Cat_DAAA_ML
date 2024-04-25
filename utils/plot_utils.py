@@ -146,7 +146,7 @@ def create_bar_plot(means:tuple, stds:tuple, min:float, max:float, metric:str, s
     plt.xticks(fontsize=14)
     plt.yticks(fontsize=14)
 
-    plt.legend(fontsize=12)
+    #plt.legend(fontsize=12)
 
     plt.savefig(os.path.join(save_path, f'{metric}_GNN_vs_TML'), dpi=300, bbox_inches='tight')
 
