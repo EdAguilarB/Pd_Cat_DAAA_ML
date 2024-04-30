@@ -192,9 +192,7 @@ def run_experiment() -> None:
 opt = BaseOptions().parse()
 
 if __name__ == "__main__": 
-    #run_experiment() 
-
-    explain_GNN_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'results_GNN'), opt=opt)
+    run_experiment() 
 
 
 
