@@ -165,10 +165,10 @@ def run_experiment() -> None:
     
     novel_desc = ['A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 
                        'D(Hammett)', 'UL(volume)', 'LL(volume)', 'UR(volume)', 'LR(volume)', 'dielectric constant']
-    explain_tml_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'novel_feat', 'results_rf'), \
+    explain_tml_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'novel_feat', 'results_rf', 'e_descriptor_v2'), \
                       opt=opt, feat_names=novel_desc)
 
-    explain_tml_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'novel_feat', 'results_gb'), \
+    explain_tml_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'novel_feat', 'results_gb', 'e_descriptor_v2'), \
                       opt=opt, feat_names=novel_desc)
     
     rdkit_desc = ['fr_ether_substrate','fr_methoxy_substrate','BalabanJ_ligand','BertzCT_ligand','Chi0_ligand',\
