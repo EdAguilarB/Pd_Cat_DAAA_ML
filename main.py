@@ -179,11 +179,14 @@ def run_experiment() -> None:
     explain_tml_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'rdkit', 'results_rf'), \
                       opt=opt, feat_names=rdkit_desc)
     
-    rdkit_desc = ['fr_allylic_oxid_substrate','fr_methoxy_substrate','BalabanJ_ligand','MaxAbsPartialCharge_ligand']
+    rdkit_desc = ['fr_C_O_substrate','fr_C_O_noCOO_substrate','fr_NH0_substrate','fr_Ndealkylation1_substrate','fr_alkyl_halide_substrate','fr_amide_substrate',
+                  'fr_aniline_substrate','fr_aryl_methyl_substrate','fr_benzene_substrate','fr_bicyclic_substrate','fr_ester_substrate','fr_ether_substrate','fr_imide_substrate',
+                  'fr_ketone_substrate','fr_ketone_Topliss_substrate','fr_lactone_substrate','fr_methoxy_substrate','fr_para_hydroxylation_substrate','Chi0_ligand',
+                  'Chi0n_ligand','Chi1n_ligand','Chi1v_ligand','HallKierAlpha_ligand','MaxAbsPartialCharge_ligand','MinAbsEStateIndex_ligand','MinEStateIndex_ligand','MinPartialCharge_ligand',
+                  'HA_solv']
 
     explain_tml_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'rdkit', 'results_gb'), \
                       opt=opt, feat_names=rdkit_desc)
-    
 
                         
 
@@ -193,49 +196,13 @@ opt = BaseOptions().parse()
 
 if __name__ == "__main__": 
     #run_experiment() 
-
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='rf', e_descriptor='v1')
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='rf', e_descriptor='v2')
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='rf', e_descriptor='v3')
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='rf', e_descriptor='v4')
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb', e_descriptor='v1')
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb', e_descriptor='v2')
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb', e_descriptor='v3')
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb', e_descriptor='v4')
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='lr', e_descriptor='v1')
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='lr', e_descriptor='v2')
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='lr', e_descriptor='v3')
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='lr', e_descriptor='v4')
-
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), representation='rdkit')
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='gb', representation='rdkit')
-    train_tml_model_nested_cv(opt=opt, parent_dir=os.getcwd(), ml_algorithm='lr', representation='rdkit')
-
-    compare_results(opt=opt, exp_dir=os.getcwd()+'/results/comparison/',
-                    path1='results/novel_feat/results_rf/e_descriptor_v2', path2='results/results_GNN', 
-                    method1='novel_rf_V2', method2='HCat-GNet')
-
-    compare_results(opt=opt, exp_dir=os.getcwd()+'/results/comparison/',
-                    path1='results/novel_feat/results_rf/e_descriptor_v2', path2='results/rdkit/results_gb', 
-                    method1='novel_rf_V2', method2='rdkit_gb')
     
-    novel_desc = ['A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 
-                       'D(Hammett)', 'UL(volume)', 'LL(volume)', 'UR(volume)', 'LR(volume)', 'dielectric constant']
-    explain_tml_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'novel_feat', 'results_rf', 'e_descriptor_v2'), \
-                      opt=opt, feat_names=novel_desc)
-
-    explain_tml_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'novel_feat', 'results_gb', 'e_descriptor_v2'), \
-                      opt=opt, feat_names=novel_desc)
     
-    rdkit_desc = ['fr_ether_substrate','fr_methoxy_substrate','BalabanJ_ligand','BertzCT_ligand','Chi0_ligand',\
-                  'Chi0n_ligand','Chi0v_ligand','Chi1_ligand','Chi1n_ligand','Chi1v_ligand','HallKierAlpha_ligand',\
-                    'MaxAbsEStateIndex_ligand','MaxAbsPartialCharge_ligand','MaxEStateIndex_ligand','MinAbsEStateIndex_ligand',\
-                        'MinEStateIndex_ligand','MinPartialCharge_ligand','MolMR_ligand']
-
-    explain_tml_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'rdkit', 'results_rf'), \
-                      opt=opt, feat_names=rdkit_desc)
-    
-    rdkit_desc = ['fr_allylic_oxid_substrate','fr_methoxy_substrate','BalabanJ_ligand','MaxAbsPartialCharge_ligand']
+    rdkit_desc = ['fr_C_O_substrate','fr_C_O_noCOO_substrate','fr_NH0_substrate','fr_Ndealkylation1_substrate','fr_alkyl_halide_substrate','fr_amide_substrate',
+                  'fr_aniline_substrate','fr_aryl_methyl_substrate','fr_benzene_substrate','fr_bicyclic_substrate','fr_ester_substrate','fr_ether_substrate','fr_imide_substrate',
+                  'fr_ketone_substrate','fr_ketone_Topliss_substrate','fr_lactone_substrate','fr_methoxy_substrate','fr_para_hydroxylation_substrate','Chi0_ligand',
+                  'Chi0n_ligand','Chi1n_ligand','Chi1v_ligand','HallKierAlpha_ligand','MaxAbsPartialCharge_ligand','MinAbsEStateIndex_ligand','MinEStateIndex_ligand','MinPartialCharge_ligand',
+                  'HA_solv']
 
     explain_tml_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'rdkit', 'results_gb'), \
                       opt=opt, feat_names=rdkit_desc)
