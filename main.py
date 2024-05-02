@@ -195,20 +195,4 @@ def run_experiment() -> None:
 opt = BaseOptions().parse()
 
 if __name__ == "__main__": 
-    #run_experiment() 
-    
-    
-    rdkit_desc = ['fr_C_O_substrate','fr_C_O_noCOO_substrate','fr_NH0_substrate','fr_Ndealkylation1_substrate','fr_alkyl_halide_substrate','fr_amide_substrate',
-                  'fr_aniline_substrate','fr_aryl_methyl_substrate','fr_benzene_substrate','fr_bicyclic_substrate','fr_ester_substrate','fr_ether_substrate','fr_imide_substrate',
-                  'fr_ketone_substrate','fr_ketone_Topliss_substrate','fr_lactone_substrate','fr_methoxy_substrate','fr_para_hydroxylation_substrate','Chi0_ligand',
-                  'Chi0n_ligand','Chi1n_ligand','Chi1v_ligand','HallKierAlpha_ligand','MaxAbsPartialCharge_ligand','MinAbsEStateIndex_ligand','MinEStateIndex_ligand','MinPartialCharge_ligand',
-                  'HA_solv']
-
-    explain_tml_model(exp_path=os.path.join(os.getcwd(), opt.log_dir_results, 'rdkit', 'results_gb'), \
-                      opt=opt, feat_names=rdkit_desc)
-
-
-
-
-
-
+    run_experiment() 
