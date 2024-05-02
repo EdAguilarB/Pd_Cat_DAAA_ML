@@ -47,10 +47,13 @@ def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str, represent
         descriptors = [electronic_descriptor(e_descriptor), 'A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 
                        'D(Hammett)', 'UL(volume)', 'LL(volume)', 'UR(volume)', 'LR(volume)', 'dielectric constant']
         
+        dir = f'{representation}/results_{ml_algorithm}/e_descriptor_{e_descriptor}/'
+        
     elif representation == 'rdkit':
         data = data[['substrate_smiles', 'ligand_smiles' ,'solvent_smiles', '%topA', 'fold', 'index']]
         data, descriptors = descriptors_all(data)
         data = data[descriptors + ['%topA', 'fold', 'index']]
+        dir = f'{representation}/results_{ml_algorithm}/'
     
 
 
@@ -112,7 +115,7 @@ def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str, represent
                   format(outer, real_inner, counter, TOT_RUNS, train_rmse, val_rmse, test_rmse) )
             
             # Generate a report of the model performance
-            tml_report(log_dir=f"{current_dir}/{opt.log_dir_results}/{representation}/results_{ml_algorithm}/e_descriptor_{e_descriptor}/",
+            tml_report(log_dir=f"{current_dir}/{opt.log_dir_results}/{dir}/",
                        data = (train_set, val_set, test_set),
                        outer = outer,
                        inner = real_inner,
@@ -128,7 +131,7 @@ def train_tml_model_nested_cv(opt: argparse.Namespace, parent_dir:str, represent
 
         # Generate a report of the model performance for the outer/test fold
         network_outer_report(
-            log_dir=f"{current_dir}/{opt.log_dir_results}/{representation}/results_{ml_algorithm}/e_descriptor_{e_descriptor}/Fold_{outer}_test_set/",
+            log_dir=f"{current_dir}/{opt.log_dir_results}/{dir}/Fold_{outer}_test_set/",
             outer=outer,
         )
 
