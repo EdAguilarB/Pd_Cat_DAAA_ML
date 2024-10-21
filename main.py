@@ -40,7 +40,7 @@ def run_experiment() -> None:
             real_inner = inner +1 if outer <= inner else inner
 
             # Initiate the early stopping parameters
-            val_best_loss = 1000
+            val_best_loss = float('inf')
             early_stopping_counter = 0
             best_epoch = 0
             # Increment the counter
