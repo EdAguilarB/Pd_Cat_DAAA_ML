@@ -64,7 +64,7 @@ class daaa_reaction(reaction_graph):
                     edge_index += max(edge_index_reaction[0]) + 1
                     edge_index_reaction = torch.cat([edge_index_reaction, edge_index], axis=1)
 
-            label = torch.tensor(reaction['%topA']).reshape(1)
+            label = torch.tensor(reaction['ddG']).reshape(1)
 
             if self._include_fold:
                 fold = reaction['fold']
@@ -86,12 +86,7 @@ class daaa_reaction(reaction_graph):
             torch.save(data, 
                        os.path.join(self.processed_dir, 
                                     f'reaction_{index}.pt'))
-
-            if index % 100 == 0:
-                print('Reaction {} processed and saved as reaction_{}.pt'.format(index, index))
             
-
-    
 
     def _get_node_feats(self, mol):
 
