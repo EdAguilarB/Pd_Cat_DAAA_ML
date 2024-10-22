@@ -109,7 +109,7 @@ class BaseOptions:
         self.parser.add_argument(
             '--early_stopping',
             type=int,
-            default=6,
+            default=7,
             help='Early stopping',
             )
         
@@ -154,6 +154,27 @@ class BaseOptions:
             default=250,
             help='Number of epochs',
             )  
+        
+        self.parser.add_argument(
+            '--tml_representation',
+            type=str,
+            default='novel_feat',
+            help='Type of representation for the TML. Allowed values: novel_feat, rdkit',
+            )
+        
+        self.parser.add_argument(
+            '--e_descriptor',
+            type=str,
+            default='v1',
+            help='Type of descriptor for the TML. Allowed values: v1, v2, v3, v4',
+            )
+        
+        self.parser.add_argument(
+            '--ml_algorithm',
+            type=str,
+            default='rf',
+            help='Type of ML algorithm for the TML. Allowed values: rf, gb, lr',
+            )
         
         self.parser.add_argument(
             '--explain_model',
