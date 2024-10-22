@@ -20,158 +20,10 @@ import icecream as ic
 ######################################
 ######################################
 
-def explain_dataset(dataset: List, 
-                   explainer,):
-    
-    loader = DataLoader(dataset=dataset)
-
-    masks_ligand = []
-    masks_substrate = []
-    masks_boron = []
-    all_masks = []
-
-    for graph in tqdm(loader):
-
-        na_ligand = AddHs(Chem.MolFromSmiles(graph.ligand[0])).GetNumAtoms()
-        na_substrate = AddHs(Chem.MolFromSmiles(graph.substrate[0])).GetNumAtoms()
-        na_boron = AddHs(Chem.MolFromSmiles(graph.solvent[0])).GetNumAtoms()
-
-        ia_ligand = 0
-        fa_ligand = na_ligand
-
-        ia_substrate = na_ligand
-        fa_substrate = na_ligand + na_substrate
-
-        ia_boron =  na_ligand + na_substrate
-        fa_boron = na_ligand + na_substrate + na_boron
-
-        ia = 0
-        fa = na_ligand+na_substrate+na_boron
-
-        explanation = explainer(x = graph.x, edge_index=graph.edge_index,  batch_index=graph.batch)
-        masks = explanation.node_mask
-
-        masks_ligand.append(masks[ia_ligand:fa_ligand])
-        masks_substrate.append(masks[ia_substrate: fa_substrate])
-        masks_boron.append(masks[ia_boron: fa_boron])
-
-        all_masks.append(masks[ia:fa])
-
-    masks_ligand = torch.cat(masks_ligand, dim = 0)
-    masks_substrate = torch.cat(masks_substrate, dim = 0)
-    masks_boron = torch.cat(masks_boron, dim = 0)
-    all_masks = torch.cat(all_masks, dim=0)
-
-    return masks_ligand, masks_substrate, masks_boron, all_masks
 
 
 
-def visualize_score_features(
-    score: torch.Tensor,
-    graph = None,
-    analysis: Optional[str] = None, 
-    mol: Optional[str] = None,
-):
 
-    atom_identity = 10
-    degree = 4
-    hyb = 4
-    aromatic = 1
-    ring = 1
-    chiral = 3
-    conf = 1
-
-    if mol:
-
-        na_ligand = AddHs(Chem.MolFromSmiles(graph.ligand[0])).GetNumAtoms()
-        na_substrate = AddHs(Chem.MolFromSmiles(graph.substrate[0])).GetNumAtoms()
-        na_boron = AddHs(Chem.MolFromSmiles(graph.solvent[0])).GetNumAtoms()
-
-        if mol == 'ligand':
-            ia = 0
-            fa = na_ligand
-        elif mol == 'substrate':
-            ia = na_ligand
-            fa = na_ligand + na_substrate
-        elif mol == 'boron':
-            ia =  na_ligand + na_substrate
-            fa =  na_ligand + na_substrate + na_boron
-
-        importances = []
-        importances.append(score[ia:fa, 0:atom_identity])
-        importances.append(score[ia:fa, atom_identity:atom_identity+degree])
-        importances.append(score[ia:fa, atom_identity+degree:atom_identity+degree+hyb])
-        importances.append(score[ia:fa, atom_identity+degree+hyb:atom_identity+degree+hyb+aromatic])
-        importances.append(score[ia:fa, atom_identity+degree+hyb+aromatic:atom_identity+degree+hyb+aromatic+ring])
-        importances.append(score[ia:fa, atom_identity+degree+hyb+aromatic+ring:atom_identity+degree+hyb+aromatic+ring+chiral])
-        importances.append(score[ia:fa, atom_identity+degree+hyb+aromatic+ring+chiral:atom_identity+degree+hyb+aromatic+ring+chiral+conf])
-    
-    else:
-
-        importances = []
-        importances.append(score[:, 0:atom_identity])
-        importances.append(score[:, atom_identity:atom_identity+degree])
-        importances.append(score[:, atom_identity+degree:atom_identity+degree+hyb])
-        importances.append(score[:, atom_identity+degree+hyb:atom_identity+degree+hyb+aromatic])
-        importances.append(score[:, atom_identity+degree+hyb+aromatic:atom_identity+degree+hyb+aromatic+ring])
-        importances.append(score[:, atom_identity+degree+hyb+aromatic+ring:atom_identity+degree+hyb+aromatic+ring+chiral])
-        importances.append(score[:, atom_identity+degree+hyb+aromatic+ring+chiral:atom_identity+degree+hyb+aromatic+ring+chiral+conf])
-
-    if analysis:
-        if analysis == 'atom_identity':
-            importance = importances[0]
-            importance = importance.sum(dim=0).cpu().numpy()
-            labels = ['H', 'B', 'C', 'N', 'O', 'F', 'Si', 'S', 'Cl', 'Br']
-            title = 'Atom Identity Importance'
-
-        elif analysis == 'degree':
-            importance = importances[1]
-            importance = importance.sum(dim=0).cpu().numpy()
-            labels = [1, 2, 3, 4]
-            title = 'Atom Degree Importance'
-
-        elif analysis == 'hyb':
-            importance = importances[2]
-            importance = importance.sum(dim=0).cpu().numpy()
-            labels = [0,2,3,4]
-            title = 'Atom Hybridization Importance'
-
-        elif analysis == 'aromatic':
-            importance = importances[3]
-            importance = importance.sum(dim=0).cpu().numpy()
-            labels = ['aromatic']
-            title = 'Atom Aromaticity Importance'
-
-        elif analysis == 'ring':
-            importance = importances[4]
-            importance = importance.sum(dim=0).cpu().numpy()
-            labels = ['IsInRing']
-            title = 'Atoms in Ring Importance'
-
-        elif analysis == 'chiral':
-            importance = importances[5]
-            importance = importance.sum(dim=0).cpu().numpy()
-            labels = [0,1,2]
-            title = 'Atom Chirality Importance'
-
-        elif analysis == 'conf':
-            importance = importances[6]
-            importance = importance.sum(dim=0).cpu().numpy()
-            labels = ['config']
-            title = 'Ligand Configuration Importance'
-
-    else:
-        importances = [importance.sum().cpu().numpy() for importance in importances]
-        importances = [np.array([x.item()]) for x in importances]
-        importance = np.concatenate(importances)
-        labels = ['Atom Identity', 'Atom Degree', 'Atom Hybridization', 'Atom Aromaticity', 'Atom InRing', 'Atom Chirality', 'System Configuration']
-        title = 'Global Importance of Node Features'
-
-    df = pd.DataFrame({'score': importance, 'labels': labels}, index=labels)
-    df = df.sort_values('score', ascending=False)
-    df = df.round(decimals=3)
-
-    return df
 
 
 def get_graph_by_idx(loader, idx):
@@ -189,9 +41,9 @@ def get_graph_by_idx(loader, idx):
 
 def mol_prep(mol_graph, mol:str):
 
-    mol_l = AddHs(Chem.MolFromSmiles(mol_graph.ligand[0]))
-    mol_s = AddHs(Chem.MolFromSmiles(mol_graph.substrate[0]))
-    mol_b = AddHs(Chem.MolFromSmiles(mol_graph.solvent[0]))
+    mol_l = Chem.MolFromSmiles(mol_graph.ligand[0])
+    mol_s = Chem.MolFromSmiles(mol_graph.substrate[0])
+    mol_b = Chem.MolFromSmiles(mol_graph.solvent[0])
 
     atoms_l = mol_l.GetNumAtoms()
     atoms_s = mol_s.GetNumAtoms()
@@ -327,8 +179,11 @@ def trace_atoms(atom_symbol, coords, sizes, colors):
 
 
 def trace_atom_imp(coords, opacity, atom_symbol, sizes, color):
-    trace_atoms_imp = [None] * len(atom_symbol)
-    for i in range(len(atom_symbol)):
+
+    atom_no_H = [atom for atom in atom_symbol if atom != 'H']
+    trace_atoms_imp = [None] * len(atom_no_H)
+
+    for i in range(len(atom_no_H)):
 
         trace_atoms_imp[i] = go.Scatter3d(x=[coords[i][0]],
                             y=[coords[i][1]],

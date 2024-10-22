@@ -8,6 +8,8 @@ import os
 from seaborn import violinplot, stripplot, jointplot, barplot
 import shap
 from matplotlib import cm
+import seaborn as sns
+from math import sqrt
 from icecream import ic
 
 def create_st_parity_plot(real, predicted, figure_name, save_path=None):
@@ -160,7 +162,7 @@ def create_violin_plot(data, save_path:str):
     violinplot(data = data, x='Test_Fold', y='Error', hue='Method', split=True, gap=.1, inner="quart", fill=False)
 
     plt.xlabel('Fold Used as Test Set', fontsize=18)
-    plt.ylabel('$\%top_{real}-\%top_{predicted}$', fontsize=18)
+    plt.ylabel('$\Delta \Delta G _{real}-\%top_{predicted}$', fontsize=18)
     plt.xticks(fontsize=16)
     plt.yticks(fontsize=16)
     ax= plt.gca()
@@ -188,9 +190,10 @@ def create_parity_plot(data: pd.DataFrame, save_path:str, method1:str, method2:s
 
     results_gnn = data[data['Method'] == method1]
 
-    g = jointplot(x="real_%top", y="predicted_%top", data=results_gnn,
+    g = jointplot(x="real_ddG", y="predicted_ddG", data=results_gnn,
                   kind="reg", truncate=False,
-                  xlim=(-1.5, 101), ylim=(-1.5, 101),
+                  xlim=(min(results_gnn['real_ddG']), max(results_gnn['real_ddG'])), 
+                  ylim=(min(results_gnn['predicted_ddG']), max(results_gnn['predicted_ddG'])), 
                   color="#1f77b4", height=7,
                   scatter_kws={"s": 5, "alpha": 0.3})
     plt.axvline(x=50, color='black', linestyle='--', linewidth=.5)
@@ -198,17 +201,13 @@ def create_parity_plot(data: pd.DataFrame, save_path:str, method1:str, method2:s
     # add horizontal line at y=50
     plt.axhline(y=50, color='black', linestyle='--', linewidth=.5)
 
-    plt.text(x=25, y=100, s=f"False Positive", fontsize=15, horizontalalignment='center', verticalalignment='center', color='black')
-    plt.text(x=75, y=100, s=f"True Positive", fontsize=15, horizontalalignment='center', verticalalignment='center', color='black')
 
-    plt.text(x=25, y=45, s=f"True Negative", fontsize=15, horizontalalignment='center', verticalalignment='center', color='black')
-    plt.text(x=75, y=45, s=f"False Negative", fontsize=15, horizontalalignment='center', verticalalignment='center', color='black')
 
     g.ax_joint.xaxis.label.set_size(20)
     g.ax_joint.yaxis.label.set_size(20)
 
-    g.ax_joint.set_xlabel('Real %top / %')
-    g.ax_joint.set_ylabel('Predicted %top / %')
+    g.ax_joint.set_xlabel('Real $\Delta \Delta G$ / kJ $mol^{-1}$')
+    g.ax_joint.set_ylabel('Predicted $\Delta \Delta G$ / kJ $mol^{-1}$')
 
     g.ax_joint.tick_params(axis='both', which='major', labelsize=15)
 
@@ -218,9 +217,10 @@ def create_parity_plot(data: pd.DataFrame, save_path:str, method1:str, method2:s
 
     results_tml = data[data['Method'] == method2]
 
-    g = jointplot(x="real_%top", y="predicted_%top", data=results_tml,
+    g = jointplot(x="real_ddG", y="predicted_ddG", data=results_tml,
                   kind="reg", truncate=False,
-                  xlim=(-1.5, 101), ylim=(-1.5, 101),
+                  xlim=(min(results_tml['real_ddG']), max(results_tml['real_ddG'])), 
+                  ylim=(min(results_tml['predicted_ddG']), max(results_tml['predicted_ddG'])), 
                   color="#ff7f0e", height=7,
                   scatter_kws={"s": 5, "alpha": 0.3})
     plt.axvline(x=50, color='black', linestyle='--', linewidth=.5)
@@ -228,17 +228,17 @@ def create_parity_plot(data: pd.DataFrame, save_path:str, method1:str, method2:s
     # add horizontal line at y=50
     plt.axhline(y=50, color='black', linestyle='--', linewidth=.5)
 
-    plt.text(x=25, y=100, s=f"False Positive", fontsize=15, horizontalalignment='center', verticalalignment='center', color='black')
-    plt.text(x=75, y=100, s=f"True Positive", fontsize=15, horizontalalignment='center', verticalalignment='center', color='black')
+    #plt.text(x=25, y=100, s=f"False Positive", fontsize=15, horizontalalignment='center', verticalalignment='center', color='black')
+    #plt.text(x=75, y=100, s=f"True Positive", fontsize=15, horizontalalignment='center', verticalalignment='center', color='black')
 
-    plt.text(x=25, y=45, s=f"True Negative", fontsize=15, horizontalalignment='center', verticalalignment='center', color='black')
-    plt.text(x=75, y=45, s=f"False Negative", fontsize=15, horizontalalignment='center', verticalalignment='center', color='black')
+    #plt.text(x=25, y=45, s=f"True Negative", fontsize=15, horizontalalignment='center', verticalalignment='center', color='black')
+    #plt.text(x=75, y=45, s=f"False Negative", fontsize=15, horizontalalignment='center', verticalalignment='center', color='black')
 
     g.ax_joint.xaxis.label.set_size(20)
     g.ax_joint.yaxis.label.set_size(20)
 
-    g.ax_joint.set_xlabel('Real %top / %')
-    g.ax_joint.set_ylabel('Predicted %top / %')
+    g.ax_joint.set_xlabel('Real $\Delta \Delta G$ / kJ $mol^{-1}$')
+    g.ax_joint.set_ylabel('Predicted $\Delta \Delta G$ / kJ $mol^{-1}$')
 
     g.ax_joint.tick_params(axis='both', which='major', labelsize=15)
 
@@ -247,22 +247,26 @@ def create_parity_plot(data: pd.DataFrame, save_path:str, method1:str, method2:s
 
 
 def plot_shap(shap_values, X, feat_names, save_path:str):
-
+    plt.rcParams.update({'font.size': 40})  # Set a general font size for the plot
     plt.figure()
     shap.summary_plot(shap_values, X, max_display = 10, color_bar_label = 'Descriptor value', show = False, plot_size= (14,5.5), feature_names=feat_names)
-    plt.grid()
-    plt.gcf().axes[-1].set_aspect('auto')
-    plt.tight_layout()
 
+    ax = plt.gca()  # Get current axis
+    ax.title.set_fontsize(16)  # Adjust title font size if there is a title
+    ax.xaxis.label.set_fontsize(24)  # Adjust x-axis label font size
+    ax.yaxis.label.set_fontsize(24)  # Adjust y-axis label font size
+    ax.tick_params(axis='both', which='major', labelsize=19)  # Adjust tick label font size
+
+    plt.grid()
+    plt.tight_layout()
     plt.gcf().axes[-1].set_box_aspect(50)
-    #Changing plot colours
-    for fc in plt.gcf().get_children():
-        for fcc in fc.get_children():
-            if hasattr(fcc, "set_cmap"):
-                fcc.set_cmap(cm.get_cmap('coolwarm'))
+
+
+
     
-    plt.savefig(os.path.join(save_path, 'shap_summary_plot'), dpi=300, bbox_inches='tight')
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.show()
+    plt.clf()
 
 
 def plot_importances(df, save_path: str):
@@ -285,4 +289,56 @@ def plot_importances(df, save_path: str):
     plt.close()
 
     
+def plot_mean_predictions(df, save_path: str=None, legend = True):
 
+# Create the parity plot
+    plt.figure(figsize=(12, 10))
+    sns.set(style="whitegrid")
+
+    # Scatter plot with hue for different methods
+    scatter = sns.scatterplot(x='real_ddG', y='mean_predicted_ddG', data=df, s=100, edgecolor='k', hue='Method', palette='deep')
+
+    # Add regression lines for each method and calculate metrics
+    metrics_text = []
+    for method in df['Method'].unique():
+        subset = df[df['Method'] == method]
+        sns.regplot(x='real_ddG', y='mean_predicted_ddG', data=subset, scatter=False, ci=None, label=f'Regression {method}', line_kws={'linestyle': '--'})
+        
+        # Calculate R2 and MAE
+        r2 = r2_score(subset['real_ddG'], subset['mean_predicted_ddG'])
+        mae = mean_absolute_error(subset['real_ddG'], subset['mean_predicted_ddG'])
+        rmse = sqrt(mean_squared_error(subset['real_ddG'], subset['mean_predicted_ddG']))
+        metrics_text.append(f"{method}: $R^2$: {r2:.2f}, MAE: {mae:.2f}, RMSE: {rmse:.2f}")
+
+    # Line of equality
+    max_val = max(df['real_ddG'].max(), df['mean_predicted_ddG'].max())
+    min_val = min(df['real_ddG'].min(), df['mean_predicted_ddG'].min())
+    plt.plot([min_val, max_val], [min_val, max_val], 'k-', linewidth=2, label='Line of Equality')
+
+    # Titles and labels
+    plt.xlabel('Real ΔΔG$^{\u2021}$ / kJ $mol^{-1}$', fontsize=26)
+    plt.ylabel('Mean Predicted ΔΔG$^{\u2021}$ / kJ $mol^{-1}$', fontsize=26)
+
+    # Enhancing the overall look
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
+    plt.grid(True, linestyle='--', alpha=0.7)
+    sns.despine(trim=True)
+
+    # Add metrics as text
+    metrics_text_str = "\n".join(metrics_text)
+    plt.text(0.25, 0.1, metrics_text_str, ha='left', va='top', transform=plt.gca().transAxes, fontsize=20, bbox=dict(facecolor='white', alpha=0.8))
+
+    # Adjust legend
+    if legend:
+        plt.legend(fontsize=16, title_fontsize=18)
+
+    # Show the plot
+    plt.tight_layout()
+
+    if save_path:
+        # Save the figure before displaying it
+        plt.savefig(os.path.join(save_path, 'mean_predictions_plot'), dpi=300, bbox_inches='tight')
+
+    plt.close()
+    plt.clf()

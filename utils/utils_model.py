@@ -182,10 +182,10 @@ def network_report(log_dir,
 
     y_pred, y_true, idx = predict_network(model, test_loader)
 
-    pd.DataFrame({'real_%top': y_true, 'predicted_%top': y_pred, 'index': idx}).to_csv("{}/predictions_test_set.csv".format(log_dir))
+    pd.DataFrame({'real_ddG': y_true, 'predicted_ddG': y_pred, 'index': idx}).to_csv("{}/predictions_test_set.csv".format(log_dir))
 
-    face_pred = np.where(y_pred > 50, 1, 0)
-    face_true = np.where(y_true > 50, 1, 0)
+    face_pred = np.where(y_pred > 0, 1, 0)
+    face_true = np.where(y_true > 0, 1, 0)
     metrics, metrics_names = calculate_metrics(face_true, face_pred, task = 'c')
 
     file1.write("Test set\n")
@@ -195,9 +195,6 @@ def network_report(log_dir,
         file1.write("{} = {:.3f}\n".format(name, value))
     
     error = abs(y_pred-y_true)
-    y_true = y_true[error<50]
-    y_pred = y_pred[error<50]
-    idx = idx[error<50]
 
     file1.write("Test Set Total Correct Face of Addition Predictions = {}\n".format(len(y_true)))
 
@@ -444,9 +441,9 @@ def load_variables(data):
     data = data.dropna(axis=0)
 
 
-    X = data.drop(['%topA', 'index', 'fold'], axis = 1)
+    X = data.drop(['ddG', 'index', 'fold'], axis = 1)
     X = RobustScaler().fit_transform(np.array(X))
-    y = data['%topA']
+    y = data['ddG']
     print('Features shape: ', X.shape)
     print('Y target variable shape: ' , y.shape)
 
@@ -518,7 +515,7 @@ def split_data(df:pd.DataFrame):
 
 def predict_tml(model, data:pd.DataFrame, descriptors:list = None):
     y_pred = model.predict(data[descriptors])
-    y_true = list(data['%topA'])
+    y_true = list(data['ddG'])
     idx = list(data['index'])
     return np.array(y_pred), np.array(y_true), np.array(idx)
 
@@ -586,10 +583,10 @@ def tml_report(log_dir,
 
     y_pred, y_true, idx = predict_tml(model=model, data=test_data, descriptors=descriptors)
 
-    pd.DataFrame({'real_%top': y_true, 'predicted_%top': y_pred, 'index': idx}).to_csv("{}/predictions_test_set.csv".format(log_dir))
+    pd.DataFrame({'real_ddG': y_true, 'predicted_ddG': y_pred, 'index': idx}).to_csv("{}/predictions_test_set.csv".format(log_dir))
 
-    face_pred = np.where(y_pred > 50, 1, 0)
-    face_true = np.where(y_true > 50, 1, 0)
+    face_pred = np.where(y_pred > 0, 1, 0)
+    face_true = np.where(y_true > 0, 1, 0)
 
     metrics, metrics_names = calculate_metrics(face_true, face_pred, task = 'c')
 
@@ -600,9 +597,7 @@ def tml_report(log_dir,
         file1.write("{} = {:.3f}\n".format(name, value))
     
     error = abs(y_pred-y_true)
-    y_true = y_true[error<50]
-    y_pred = y_pred[error<50]
-    idx = idx[error<50]
+
         
     file1.write("Test Set Total Correct Face of Addition Predictions = {}\n".format(len(y_true)))
 
