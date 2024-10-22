@@ -47,7 +47,6 @@ class daaa_reaction(reaction_graph):
                 #create a molecule object from the smiles string
                 mol = Chem.MolFromSmiles(standardize_smiles(reaction[reactant]))
 
-                mol = Chem.rdmolops.AddHs(mol)
 
                 node_feats = self._get_node_feats(mol)
 
@@ -98,15 +97,23 @@ class daaa_reaction(reaction_graph):
             # Feature 1: Atomic number        
             node_feats += self._one_h_e(atom.GetSymbol(), self._elem_list)
             # Feature 2: Atom degree
-            #node_feats += self._one_h_e(atom.GetDegree(), [1, 2, 3, 4])
-            # Feature 3: Hybridization
-            #node_feats += self._one_h_e(atom.GetHybridization(), [0,2,3,4])
-            # Feature 4: Aromaticity
-            #node_feats += [atom.GetIsAromatic()]
-            # Feature 5: In Ring
-            #node_feats += [atom.IsInRing()]
-            # Feature 6: Chirality
-            node_feats += self._one_h_e(self._get_atom_chirality(CIPtuples, atom.GetIdx()), ['R', 'S'], 'No_Stereo_Center')
+            node_feats += self._one_h_e(atom.GetDegree(), [1, 2, 3, 4, 5, 6])
+            # Feature 3: Atom total number of Hs
+            node_feats += self._one_h_e(atom.GetTotalNumHs(), [0, 1, 2, 3, 4])
+            # Feature 4: Hybridization
+            node_feats += self._one_h_e(atom.GetHybridization(), [Chem.rdchem.HybridizationType.UNSPECIFIED,
+                                                                  Chem.rdchem.HybridizationType.SP,
+                                                                  Chem.rdchem.HybridizationType.SP2,
+                                                                  Chem.rdchem.HybridizationType.SP3,
+                                                                  ])
+            # Feature 5: Aromaticity
+            node_feats += [atom.GetIsAromatic()]
+            # Feature 6: In Ring
+            node_feats += [atom.IsInRing()]
+            # Feature 7: Chirality
+            node_feats += self._one_h_e(atom.GetChiralTag(), [Chem.rdchem.ChiralType.CHI_TETRAHEDRAL_CW, 
+                                                    Chem.rdchem.ChiralType.CHI_TETRAHEDRAL_CCW
+                                                    ], Chem.rdchem.ChiralType.CHI_UNSPECIFIED)
 
             # Append node features to matrix
             all_node_feats.append(node_feats)
