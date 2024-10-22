@@ -11,13 +11,15 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
 sys.path.append(parent_dir)
 
+from options.base_options import BaseOptions
 from utils.utils_model import choose_model, hyperparam_tune, load_variables, electronic_descriptor, \
     split_data, tml_report, network_outer_report, descriptors_all, select_features
 
 
-def train_tml_nested_CV(opt: argparse.Namespace, parent_dir:str, representation = 'novel_feat', ml_algorithm = 'rf', e_descriptor = 'v1'):
+def train_tml_nested_CV(opt: argparse.Namespace, parent_dir:str):
 
     print('Initialising chiral ligands selectivity prediction using a traditional ML approach.')
+    print(f'Using the {opt.ml_algorithm} algorithm and the {opt.tml_representation} representation.')
     
     # Get the current working directory 
     current_dir = parent_dir
@@ -27,19 +29,19 @@ def train_tml_nested_CV(opt: argparse.Namespace, parent_dir:str, representation 
     data = pd.read_csv(f'{opt.root}/raw/{filename}')
 
     # Select the descriptors
-    if representation == 'novel_feat':
-        data = data[[electronic_descriptor(e_descriptor), 'A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 'D(Hammett)', 
-                     'UL(volume)', 'LL(volume)', 'UR(volume)', 'LR(volume)', 'dielectric constant', '%topA', 'fold', 'index']]
-        descriptors = [electronic_descriptor(e_descriptor), 'A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 
+    if opt.tml_representation == 'novel_feat':
+        data = data[[electronic_descriptor(opt.e_descriptor), 'A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 'D(Hammett)', 
+                     'UL(volume)', 'LL(volume)', 'UR(volume)', 'LR(volume)', 'dielectric constant', 'ddG', 'fold', 'index']]
+        descriptors = [electronic_descriptor(opt.e_descriptor), 'A(stout)', 'B(volume)', 'B(Hammett)',  'C(volume)', 'C(Hammett)', 'D(volume)', 
                        'D(Hammett)', 'UL(volume)', 'LL(volume)', 'UR(volume)', 'LR(volume)', 'dielectric constant']
         
-        dir = f'{representation}/results_{ml_algorithm}/e_descriptor_{e_descriptor}/'
+        dir = f'{opt.tml_representation}/results_{opt.ml_algorithm}/e_descriptor_{opt.e_descriptor}/'
         
-    elif representation == 'rdkit':
-        data = data[['substrate_smiles', 'ligand_smiles' ,'solvent_smiles', '%topA', 'fold', 'index']]
+    elif opt.tml_representation == 'rdkit':
+        data = data[['substrate_smiles', 'ligand_smiles' ,'solvent_smiles', 'ddG', 'fold', 'index']]
         data, descriptors = descriptors_all(data)
-        data = data[descriptors + ['%topA', 'fold', 'index']]
-        dir = f'{representation}/results_{ml_algorithm}/'
+        data = data[descriptors + ['ddG', 'fold', 'index']]
+        dir = f'{opt.tml_representation}/results_{opt.ml_algorithm}/'
     
 
 
@@ -52,12 +54,12 @@ def train_tml_nested_CV(opt: argparse.Namespace, parent_dir:str, representation 
     # Hyperparameter optimisation
     print("Hyperparameter optimisation starting...")
     X, y = load_variables(data)
-    best_params = hyperparam_tune(X, y, choose_model(best_params=None, algorithm = ml_algorithm), opt.global_seed)
+    best_params = hyperparam_tune(X, y, choose_model(best_params=None, algorithm = opt.ml_algorithm), opt.global_seed)
     print('Hyperparameter optimisation has finalised')
 
-    if representation == 'rdkit':
-        descriptors = list(select_features(choose_model(best_params, ml_algorithm), X=data[descriptors], y=data['%topA'], names=descriptors))
-        data = data[descriptors + ['%topA', 'fold', 'index']]
+    if opt.tml_representation == 'rdkit':
+        descriptors = list(select_features(choose_model(best_params, opt.ml_algorithm), X=data[descriptors], y=data['ddG'], names=descriptors))
+        data = data[descriptors + ['ddG', 'fold', 'index']]
 
     X  = data[descriptors]
     X_scaled = RobustScaler().fit_transform(X=X)
@@ -84,20 +86,20 @@ def train_tml_nested_CV(opt: argparse.Namespace, parent_dir:str, representation 
             # Get the train, validation and test sets
             train_set, val_set, test_set = next(ncv_iterator)
             # Choose the model
-            model = choose_model(best_params, ml_algorithm)
+            model = choose_model(best_params, opt.ml_algorithm)
             # Fit the model
-            model.fit(train_set[descriptors], train_set['%topA'])
+            model.fit(train_set[descriptors], train_set['ddG'])
             # Predict the train set
             preds = model.predict(train_set[descriptors])
-            train_rmse = sqrt(mean_squared_error(train_set['%topA'], preds))
+            train_rmse = sqrt(mean_squared_error(train_set['ddG'], preds))
             # Predict the validation set
             preds = model.predict(val_set[descriptors])
-            val_rmse = sqrt(mean_squared_error(val_set['%topA'], preds))
+            val_rmse = sqrt(mean_squared_error(val_set['ddG'], preds))
             # Predict the test set
             preds = model.predict(test_set[descriptors])
-            test_rmse = sqrt(mean_squared_error(test_set['%topA'], preds))
+            test_rmse = sqrt(mean_squared_error(test_set['ddG'], preds))
 
-            print('Outer: {} | Inner: {} | Run {}/{} | Train RMSE {:.3f} % | Val RMSE {:.3f} % | Test RMSE {:.3f} %'.\
+            print('Outer: {} | Inner: {} | Run {}/{} | Train RMSE {:.3f} kJ/mol | Val RMSE {:.3f} kJ/mol | Test RMSE {:.3f} kJ/mol'.\
                   format(outer, real_inner, counter, TOT_RUNS, train_rmse, val_rmse, test_rmse) )
             
             # Generate a report of the model performance
@@ -124,3 +126,7 @@ def train_tml_nested_CV(opt: argparse.Namespace, parent_dir:str, representation 
         print('---------------------------------')
         
     print('All runs completed')
+
+if __name__ == '__main__':
+    opt = BaseOptions().parse()
+    train_tml_nested_CV(opt, parent_dir='./')

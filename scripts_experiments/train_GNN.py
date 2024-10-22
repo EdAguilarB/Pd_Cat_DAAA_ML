@@ -68,8 +68,8 @@ def train_model(opt) -> None:
                     val_loss = eval_network(model, val_loader, device)
                     test_loss = eval_network(model, test_loader, device)  
 
-                    print('{}/{}-Epoch {:03d} | Train loss: {:.3f} % | Validation loss: {:.3f} % | '             
-                        'Test loss: {:.3f} %'.format(counter, TOT_RUNS, epoch, train_loss, val_loss, test_loss))
+                    print('{}/{}-Epoch {:03d} | Train loss: {:.3f} kJ/mol | Validation loss: {:.3f} kJ/mol | '             
+                        'Test loss: {:.3f} kJ/mol'.format(counter, TOT_RUNS, epoch, train_loss, val_loss, test_loss))
                     
                     # Model performance is evaluated every 5 epochs
                     if epoch % 5 == 0:
