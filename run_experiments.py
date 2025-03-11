@@ -1,11 +1,11 @@
 import os
+
+from options.base_options import BaseOptions
+from scripts_experiments.compare_methods import compare_results
+from scripts_experiments.explain_GNN import explain_GNN_model
+from scripts_experiments.explain_tml import explain_tml_model
 from scripts_experiments.train_GNN import train_model
 from scripts_experiments.train_TML import train_tml_nested_CV
-from scripts_experiments.compare_methods import compare_results
-from scripts_experiments.explain_tml import explain_tml_model
-from scripts_experiments.explain_GNN import explain_GNN_model
-from options.base_options import BaseOptions
-
 
 terms_dict = {
     'rf': 'Random Forest',  
