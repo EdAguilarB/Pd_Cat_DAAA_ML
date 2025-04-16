@@ -50,6 +50,7 @@ class daaa_reaction(reaction_graph):
         for index, reaction in tqdm(self.data.iterrows(), total=self.data.shape[0]):
 
             node_feats_reaction = None
+            temp = reaction['temp']/100
 
             for reactant in self.mol_cols:
 
@@ -78,6 +79,8 @@ class daaa_reaction(reaction_graph):
                     )
 
             label = torch.tensor(reaction["ddG"]).reshape(1)
+
+            temp_col = torch.full((node_feats_reaction.shape[0], 1), temp)
 
             if self._include_fold:
                 fold = reaction["fold"]
