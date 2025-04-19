@@ -72,7 +72,7 @@ def explain_GNN_model(opt: argparse.Namespace) -> None:
             x=mol.x, edge_index=mol.edge_index, batch_index=mol.batch
         )
         plot_molecule_importance(
-            mol_graph=mol, mol="l", explanation=explanation, palette="normal"
+            mol_graph=mol, mol=opt.explain_mol, explanation=explanation, palette="normal"
         )
 
 
