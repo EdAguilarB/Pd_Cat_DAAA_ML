@@ -59,7 +59,7 @@ def mol_prep(mol_graph, mol: str):
         coords = mol_s.GetConformer().GetPositions()
         atom_symbol = [atom.GetSymbol() for atom in mol_s.GetAtoms()]
 
-    elif mol == "b":
+    elif mol == "sol":
         fa = atoms_l + atoms_s
         la = atoms_l + atoms_s + atoms_b
 
@@ -68,7 +68,9 @@ def mol_prep(mol_graph, mol: str):
         atom_symbol = [atom.GetSymbol() for atom in mol_b.GetAtoms()]
 
     else:
-        print("No valid molecule selected")
+        raise ValueError(
+            f"Invalid molecule type '{mol}'. Expected 'l', 's', or 'sol'."
+        )
 
     return fa, la, coords, atom_symbol
 
@@ -90,7 +92,7 @@ def get_masks(explanation, fa, la, edge_idx):
     return edge_mask_dict, node_mask
 
 
-def normalise_masks(edge_mask_dict, node_mask):
+def normalise_masks(edge_mask_dict, node_mask, feature = None):
     neg_edge = [True if num < 0 else False for num in list(edge_mask_dict.values())]
     min_value_edge = abs(min(edge_mask_dict.values(), key=abs))
     max_value_edge = abs(max(edge_mask_dict.values(), key=abs))
@@ -105,6 +107,9 @@ def normalise_masks(edge_mask_dict, node_mask):
         key: -value if convert else value
         for (key, value), convert in zip(abs_dict.items(), neg_edge)
     }
+
+    if feature == "chirality":
+        node_mask = node_mask[:, -3:-1]
 
     node_mask = node_mask.sum(axis=1)
     node_mask = [val.item() for val in node_mask]
@@ -327,8 +332,8 @@ def plot_molecule_importance(mol_graph, mol, explanation, palette):
     ]
 
     edge_weights = list(edge_mask_dict.values())
-    opacity_edges = [(x + 1) / 2 for x in edge_weights]
-    opacity_nodes = [(x + 1) / 2 for x in node_mask]
+    opacity_edges = [(x + 1) / 2 if x != 0 else 0 for x in edge_weights]
+    opacity_nodes = [(abs(x) + 1) / 2  if x != 0 else 0 for x in node_mask]
 
     neg_edges = [True if num < 0 else False for num in list(edge_mask_dict.values())]
     neg_nodes = [True if num < 0 else False for num in node_mask]
