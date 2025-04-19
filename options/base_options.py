@@ -192,6 +192,13 @@ class BaseOptions:
         )
 
         self.parser.add_argument(
+            "--explain_mol",
+            type=str,
+            default='l',
+            help="Molecule to explain. Allowed values: l, s, sol",
+        )
+
+        self.parser.add_argument(
             "--global_seed",
             type=int,
             default=2023,
