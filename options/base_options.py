@@ -1,5 +1,6 @@
 import argparse
 
+
 class BaseOptions:
 
     def __init__(self) -> None:
@@ -9,199 +10,203 @@ class BaseOptions:
     def initialize(self):
 
         self.parser.add_argument(
-            '--experiment_name',
+            "--experiment_name",
             type=str,
-            default='daaa_ML',
-            help='Name of the experiment',
+            default="daaa_ML",
+            help="Name of the experiment",
         ),
 
         self.parser.add_argument(
-            '--root',
+            "--root",
             type=str,
-            default='data/dataset/',
-            help='Root directory containing the database',
+            default="data/dataset/",
+            help="Root directory containing the database",
         )
 
         self.parser.add_argument(
-            '--filename',
+            "--filename",
             type=str,
-            default='DAAA.csv',
-            help='Name of the dataset',
+            default="DAAA.csv",
+            help="Name of the dataset",
         )
-        
+
         self.parser.add_argument(
-            '--log_dir_results',
+            "--log_dir_results",
             type=str,
-            default='results/',
-            help='path to the folder where the results will be saved',
-            )
-        
+            default="results/",
+            help="path to the folder where the results will be saved",
+        )
+
         self.parser.add_argument(
-            '--mol_cols',
+            "--mol_cols",
             type=list,
-            default=['ligand_smiles', 'substrate_smiles', 'solvent_smiles'],
-            help='Column name of the molecule',
+            default=["ligand_smiles", "substrate_smiles", "solvent_smiles"],
+            help="Column name of the molecule",
         )
 
         self.parser.add_argument(
-            '--folds',
+            "--folds",
             type=int,
             default=10,
-            help='Number of folds for the dataset',
+            help="Number of folds for the dataset",
         )
 
         self.parser.add_argument(
-            '--n_classes',
+            "--n_classes",
             type=int,
             default=1,
-            help='Number of classes',
-            )
+            help="Number of classes",
+        )
 
         self.parser.add_argument(
-            '--n_convolutions',
+            "--n_convolutions",
             type=int,
             default=2,
-            help='Number of convolutions',
-            )
-        
+            help="Number of convolutions",
+        )
+
         self.parser.add_argument(
-            '--readout_layers',
+            "--readout_layers",
             type=int,
             default=2,
-            help='Number of readout layers',
-            )
-        
+            help="Number of readout layers",
+        )
+
         self.parser.add_argument(
-            '--embedding_dim',
+            "--embedding_dim",
             type=int,
             default=64,
-            help='Embedding dimension',
-            )
-        
+            help="Embedding dimension",
+        )
+
         self.parser.add_argument(
-            '--improved',
+            "--improved",
             type=bool,
             default=False,
-            help='Whether to use the improved version of the GCN',
-            )
-        
+            help="Whether to use the improved version of the GCN",
+        )
+
         self.parser.add_argument(
-            '--problem_type',
+            "--problem_type",
             type=str,
-            default='regression',
-            help='Type of problem',
-            )
-        
+            default="regression",
+            help="Type of problem",
+        )
+
         self.parser.add_argument(
-            '--optimizer',
+            "--optimizer",
             type=str,
-            default='Adam',
-            help='Type of optimizer',
-            )
-        
+            default="Adam",
+            help="Type of optimizer",
+        )
+
         self.parser.add_argument(
-            '--lr',
+            "--lr",
             type=float,
             default=0.01,
-            help='Learning rate',
-            )
-        
+            help="Learning rate",
+        )
+
         self.parser.add_argument(
-            '--early_stopping',
+            "--early_stopping",
             type=int,
             default=7,
-            help='Early stopping',
-            )
-        
+            help="Early stopping",
+        )
+
         self.parser.add_argument(
-            '--scheduler',
+            "--scheduler",
             type=str,
-            default='ReduceLROnPlateau',
-            help='Type of scheduler',
-            )
-        
+            default="ReduceLROnPlateau",
+            help="Type of scheduler",
+        )
+
         self.parser.add_argument(
-            '--step_size',
+            "--step_size",
             type=int,
             default=7,
-            help='Step size for the scheduler',
-            )
-        
+            help="Step size for the scheduler",
+        )
+
         self.parser.add_argument(
-            '--gamma',
+            "--gamma",
             type=float,
             default=0.7,
-            help='Factor for the scheduler',
-            )
-        
+            help="Factor for the scheduler",
+        )
+
         self.parser.add_argument(
-            '--min_lr',
+            "--min_lr",
             type=float,
             default=1e-08,
-            help='Minimum learning rate for the scheduler',
-            )
-        
+            help="Minimum learning rate for the scheduler",
+        )
+
         self.parser.add_argument(
-            '--batch_size',
+            "--batch_size",
             type=int,
             default=40,
-            help='Batch size',
-            )
-        
+            help="Batch size",
+        )
+
         self.parser.add_argument(
-            '--epochs',
+            "--epochs",
             type=int,
             default=250,
-            help='Number of epochs',
-            )  
-        
-        self.parser.add_argument(
-            '--tml_representation',
-            type=str,
-            default='novel_feat',
-            help='Type of representation for the TML. Allowed values: novel_feat, rdkit',
-            )
-        
-        self.parser.add_argument(
-            '--e_descriptor',
-            type=str,
-            default='v1',
-            help='Type of descriptor for the TML. Allowed values: v1, v2, v3, v4',
-            )
-        
-        self.parser.add_argument(
-            '--ml_algorithm',
-            type=str,
-            default='rf',
-            help='Type of ML algorithm for the TML. Allowed values: rf, gb, lr',
-            )
-        
-        self.parser.add_argument(
-            '--explain_model',
-            type=tuple,
-            default=(9,5),
-            help='Model to explain',
-            )
-        
-        self.parser.add_argument(
-            '--explain_reactions',
-            type=tuple,
-            default=(22,23,24),
-            help='Model to explain',
-            )
-    
+            help="Number of epochs",
+        )
 
         self.parser.add_argument(
-            '--global_seed',
+            "--tml_representation",
+            type=str,
+            default="novel_feat",
+            help="Type of representation for the TML. Allowed values: novel_feat, rdkit",
+        )
+
+        self.parser.add_argument(
+            "--e_descriptor",
+            type=str,
+            default="v1",
+            help="Type of descriptor for the TML. Allowed values: v1, v2, v3, v4",
+        )
+
+        self.parser.add_argument(
+            "--ml_algorithm",
+            type=str,
+            default="rf",
+            help="Type of ML algorithm for the TML. Allowed values: rf, gb, lr",
+        )
+
+        self.parser.add_argument(
+            "--explain_model",
+            type=tuple,
+            default=(9, 5),
+            help="Model to explain",
+        )
+
+        self.parser.add_argument(
+            "--explain_reactions",
+            type=tuple,
+            default=(22, 23, 24),
+            help="Model to explain",
+        )
+
+        self.parser.add_argument(
+            "--explain_mol",
+            type=str,
+            default='l',
+            help="Molecule to explain. Allowed values: l, s, sol",
+        )
+
+        self.parser.add_argument(
+            "--global_seed",
             type=int,
             default=2023,
-            help='Global random seed for reproducibility',
-            )
-        
-
+            help="Global random seed for reproducibility",
+        )
 
         self.initialized = True
-    
+
     def parse(self):
         if not self.initialized:
             self.initialize()
